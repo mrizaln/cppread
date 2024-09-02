@@ -16,21 +16,30 @@
 
 namespace cppread
 {
-    /*
-     * read multiple values from stdin
+    /**
+     * @brief Read multiple values from stdin.
+     *
+     * @param prompt The prompt.
+     * @param delim Delimiter, only `char` so you can't use unicode
      */
     template <Parseable... Ts>
-        requires(sizeof...(Ts) > 1)
+        requires(sizeof...(Ts) > 1) and (std::default_initializable<Ts> and ...)
     Result<std::tuple<Ts...>> read(std::string_view prompt, char delim = ' ') noexcept;
 
-    /*
-     * read a single value from stdin
+    /**
+     * @brief Read a single value from stdin.
+     *
+     * @param prompt The prompt.
+     * @param delim Delimiter, only `char` so you can't use unicode.
      */
     template <Parseable T>
+        requires std::default_initializable<T>
     Result<T> read(std::string_view prompt, char delim = ' ') noexcept;
 
-    /*
-     * read a single line of string
+    /**
+     * @brief Read a string until '\n' is found (aka getline)
+     *
+     * @param prompt The prompt.
      */
     inline Result<std::string> read(std::string_view prompt) noexcept;
 }
@@ -45,7 +54,7 @@ namespace cppread
 namespace cppread::detail
 {
     template <Parseable... Ts>
-        requires(sizeof...(Ts) >= 1)
+        requires(sizeof...(Ts) >= 1) and (std::default_initializable<Ts> and ...)
     Result<std::tuple<Ts...>> read_impl(std::string_view prompt, char delim) noexcept
     {
         using Ret               = std::tuple<Ts...>;
@@ -99,13 +108,14 @@ namespace cppread::detail
 namespace cppread
 {
     template <Parseable... Ts>
-        requires(sizeof...(Ts) > 1)
+        requires(sizeof...(Ts) > 1) and (std::default_initializable<Ts> and ...)
     Result<std::tuple<Ts...>> read(std::string_view prompt, char delim) noexcept
     {
         return detail::read_impl<Ts...>(prompt, delim);
     }
 
     template <Parseable T>
+        requires std::default_initializable<T>
     Result<T> read(std::string_view prompt, char delim) noexcept
     {
         auto result = detail::read_impl<T>(prompt, delim);
