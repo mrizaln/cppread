@@ -3,8 +3,8 @@
 
 #include "cppread/common.hpp"
 
-#include <cctype>
 #include <array>
+#include <cctype>
 #include <charconv>
 #include <string>
 #include <string_view>

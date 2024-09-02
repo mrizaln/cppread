@@ -28,6 +28,11 @@ namespace cppread
      */
     template <Parseable T>
     Result<T> read(std::string_view prompt, char delim = ' ') noexcept;
+
+    /*
+     * read a single line of string
+     */
+    inline Result<std::string> read(std::string_view prompt) noexcept;
 }
 
 // =============================================================================
@@ -37,7 +42,7 @@ namespace cppread
 #include <string>
 #include <cstdio>
 
-namespace cppread
+namespace cppread::detail
 {
     template <Parseable... Ts>
         requires(sizeof...(Ts) >= 1)
@@ -89,18 +94,30 @@ namespace cppread
 
         return result;
     }
+}
 
+namespace cppread
+{
     template <Parseable... Ts>
         requires(sizeof...(Ts) > 1)
     Result<std::tuple<Ts...>> read(std::string_view prompt, char delim) noexcept
     {
-        return read_impl<Ts...>(prompt, delim);
+        return detail::read_impl<Ts...>(prompt, delim);
     }
 
     template <Parseable T>
     Result<T> read(std::string_view prompt, char delim) noexcept
     {
-        auto result = read_impl<T>(prompt, delim);
+        auto result = detail::read_impl<T>(prompt, delim);
+        if (result) {
+            return std::get<0>(std::move(result).value());
+        }
+        return result.error();
+    }
+
+    inline Result<std::string> read(std::string_view prompt) noexcept
+    {
+        auto result = detail::read_impl<std::string>(prompt, '\n');
         if (result) {
             return std::get<0>(std::move(result).value());
         }
