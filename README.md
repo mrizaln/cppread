@@ -48,8 +48,8 @@ This library is an attempt at improving console input in C++ by fixing the pain 
 - Line based input: each read consume an entire line of the `stdin`.
 - Improved error handling: using custom type that wraps a variant: `cppread::Result<T>`.
 - Exception-free: no exception thrown from `cppread::read` functions (`cppread::readRepeat` functions can throw though).
-- `const` compatible: you can assign the result of `cppread::read` to a `const` variable easily.
 - No buffering: each read done from `stdin` raw.
+- `const` compatible: you can assign the result of `cppread::read` to a `const` variable easily.
 
   > ```cpp
   > // you certainly can do this, but it lacks error handling
