@@ -14,6 +14,11 @@ namespace cppread
     template <typename Fn, typename Ret, typename... Args>
     concept Callable = std::invocable<Fn, Args...> and std::same_as<Ret, std::invoke_result_t<Fn, Args...>>;
 
+    using Str = std::string_view;
+
+    template <typename... Ts>
+    using Tuple = std::tuple<Ts...>;
+
     enum class Error
     {
         InvalidInput,    // `failbit`; generic parse failure (eg: parsing "asd" to `int`)
@@ -21,6 +26,17 @@ namespace cppread
         EndOfFile,       // `eofbit`; EOF reached
         Unknown,         // `badbit`; unknown error, usually platform-specific [check errno]
     };
+
+    inline Str toString(Error error)
+    {
+        switch (error) {
+        case Error::InvalidInput: return "Invalid input (failed to parse input)";
+        case Error::OutOfRange: return "Parsed value can't be contained within given type";
+        case Error::EndOfFile: return "stdin EOF has been reached";
+        case Error::Unknown: return "Unknown error (platform error)";
+        default: return "Unknown error";
+        }
+    }
 
     template <typename T>
     class Result
@@ -52,12 +68,7 @@ namespace cppread
     };
 
     template <typename... Ts>
-    using Tuple = std::tuple<Ts...>;
-
-    template <typename... Ts>
     using Results = Result<Tuple<Ts...>>;
-
-    using Str = std::string_view;
 }
 
 #endif /* end of include guard: CPPREAD_COMMON_HPP */
