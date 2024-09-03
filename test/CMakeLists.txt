@@ -15,7 +15,7 @@ add_subdirectory(lib/cppread)
 add_executable(main source/main.cpp)
 target_include_directories(main PRIVATE source)
 target_link_libraries(main PRIVATE fmt::fmt Boost::ut cppread)
-target_compile_options(main PRIVATE -Wall -Wextra -Wconversion -Wswitch-enum)
+target_compile_options(main PRIVATE -Wall -Wextra -Wconversion)
 
 # sanitizer
 target_compile_options(main PRIVATE -fsanitize=address,leak,undefined)
