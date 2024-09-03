@@ -7,28 +7,27 @@
 #include <cctype>
 #include <charconv>
 #include <string>
-#include <string_view>
 
 namespace cppread
 {
     template <typename>
     struct Parser
     {
-        static_assert(false, "No parser specialization for the type");
+        static_assert(false, "No Parser specialization for the type");
     };
 
-    // for char
+    // specialization for char
     template <>
     struct Parser<char>
     {
-        Result<char> parse(std::string_view str) const noexcept { return str[0]; }
+        Result<char> parse(Str str) const noexcept { return str[0]; }
     };
 
-    // for boolean
+    // specialization for boolean
     template <>
     struct Parser<bool>
     {
-        Result<bool> parse(std::string_view str) const noexcept
+        Result<bool> parse(Str str) const noexcept
         {
             using Buf = std::array<char, 6>;
             Buf buf   = {};
@@ -54,11 +53,11 @@ namespace cppread
         }
     };
 
-    // for fundamental types
+    // specialization for fundamental types
     template <Fundamental T>
     struct Parser<T>
     {
-        Result<T> parse(std::string_view str) const noexcept
+        Result<T> parse(Str str) const noexcept
         {
             T value;
             auto [ptr, ec] = std::from_chars(str.begin(), str.end(), value);
@@ -73,20 +72,27 @@ namespace cppread
         }
     };
 
-    // for std::string
+    // specialization for std::string
     template <>
     struct Parser<std::string>
     {
-        Result<std::string> parse(std::string_view str) const noexcept
-        {
-            return std::string{ str.begin(), str.size() };
-        }
+        Result<std::string> parse(Str str) const noexcept { return std::string{ str.begin(), str.size() }; }
     };
 
     template <typename T>
-    concept Parseable = requires(const Parser<T> p, std::string_view str) {
+    concept Parseable = requires(const Parser<T> p, Str str) {
         { p.parse(str) } noexcept -> std::same_as<Result<T>>;
     };
+
+    /**
+     * @brief Helper function that calls the specialized `Parser` member function, since writing
+     *        `cppread::Parser<T>{}.parse(str)` will get old really quickly.
+     */
+    template <Parseable T>
+    Result<T> parse(Str str)
+    {
+        return Parser<T>{}.parse(str);
+    }
 }
 
 #endif /* end of include guard: CPPREAD_PARSER_HPP */

@@ -1,17 +1,18 @@
 #ifndef CPPREAD_DETAIL_SPLIT_HPP
 #define CPPREAD_DETAIL_SPLIT_HPP
 
+#include "cppread/common.hpp"
+
 #include <array>
 #include <optional>
-#include <string_view>
 
-namespace cppread::detail
+namespace cppread::util
 {
     template <std::size_t N>
-    using Split = std::array<std::string_view, N>;
+    using Split = std::array<Str, N>;
 
     template <std::size_t N>
-    constexpr std::optional<Split<N>> split(std::string_view str, char delim) noexcept
+    constexpr std::optional<Split<N>> split(Str str, char delim) noexcept
     {
         Split<N>    result = {};
         std::size_t i      = 0;
@@ -40,7 +41,7 @@ namespace cppread::detail
                 pos = str.find(delim, j);
             }
 
-            if (pos == std::string_view::npos) {
+            if (pos == Str::npos) {
                 result[i++] = str.substr(j);
                 break;
             }

@@ -3,10 +3,6 @@
 
 #include "cppread/read.hpp"
 
-#include "cppread/detail/callable.hpp"
-
-#include <stdexcept>
-
 // =============================================================================
 //  Forward declarations
 // =============================================================================
@@ -30,8 +26,12 @@ namespace cppread
      * @throw User-provided-error If the `fn` throws, this function will throws as well.
      */
     template <Parseable... Ts, typename Fn>
-        requires(sizeof...(Ts) > 1) and (std::default_initializable<Ts> and ...)
-    std::tuple<Ts...> readRepeat(std::string_view prompt, Fn&& fn, char delim = ' ');
+        requires(
+            (sizeof...(Ts) > 1)    //
+            and (std::default_initializable<Ts> and ...)
+            and Callable<Fn, Repeat, Results<Ts...>&>
+        )
+    Tuple<Ts...> readRepeat(Str prompt, Fn&& fn, char delim = ' ');
 
     /**
      * @brief Read a single value from stdin.
@@ -44,19 +44,25 @@ namespace cppread
      * @throw User-provided-error If the `fn` throws, this function will throws as well.
      */
     template <Parseable T, typename Fn>
-        requires std::default_initializable<T>
-    T readRepeat(std::string_view prompt, Fn&& fn, char delim = ' ');
+        requires std::default_initializable<T> and Callable<Fn, Repeat, Result<T>&>
+    T readRepeat(Str prompt, Fn&& fn, char delim = ' ');
 }
 
 // =============================================================================
 //  Implementation
 // =============================================================================
 
+#include <stdexcept>
+
 namespace cppread
 {
     template <Parseable... Ts, typename Fn>
-        requires(sizeof...(Ts) > 1) and (std::default_initializable<Ts> and ...)
-    std::tuple<Ts...> readRepeat(std::string_view prompt, Fn&& fn, char delim)
+        requires(
+            (sizeof...(Ts) > 1)    //
+            and (std::default_initializable<Ts> and ...)
+            and Callable<Fn, Repeat, Results<Ts...>&>
+        )
+    Tuple<Ts...> readRepeat(Str prompt, Fn&& fn, char delim)
     {
         while (true) {
             auto result = read<Ts...>(prompt, delim);
@@ -76,8 +82,8 @@ namespace cppread
     }
 
     template <Parseable T, typename Fn>
-        requires std::default_initializable<T>
-    T readRepeat(std::string_view prompt, Fn&& fn, char delim)
+        requires std::default_initializable<T> and Callable<Fn, Repeat, Result<T>&>
+    T readRepeat(Str prompt, Fn&& fn, char delim)
     {
         while (true) {
             auto result = read<T>(prompt, delim);

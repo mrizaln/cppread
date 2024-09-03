@@ -3,7 +3,7 @@
 
 #include <tuple>
 
-namespace cppread::detail
+namespace cppread::util
 {
     template <typename T, typename Fn>
     inline constexpr auto forEachTuple(T&& tuple, Fn&& fn)
