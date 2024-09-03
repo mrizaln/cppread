@@ -19,22 +19,27 @@ namespace cppread
     template <typename... Ts>
     using Tuple = std::tuple<Ts...>;
 
-    enum class Error
+    enum class Error : char
     {
-        InvalidInput,    // `failbit`; generic parse failure (eg: parsing "asd" to `int`)
-        OutOfRange,      // parsed value can't be contained in given type (eg: value > 2^31-1 for `int`)
-        EndOfFile,       // `eofbit`; EOF reached
-        Unknown,         // `badbit`; unknown error, usually platform-specific [check errno]
+        // generic error
+        InvalidInput = 0b0001,    // `failbit`; generic parse failure (eg: parsing "asd" to `int`)
+        OutOfRange   = 0b0010,    // `failbit`; parsed value can't be contained within given type
+
+        // stream error, unrecoverable
+        EndOfFile = 0b0101,    // `eofbit`; EOF reached
+        Unknown   = 0b0110,    // `badbit`; unknown error, usually platform-specific [check errno]
     };
 
     inline Str toString(Error error)
     {
         switch (error) {
-        case Error::InvalidInput: return "Invalid input (failed to parse input)";
-        case Error::OutOfRange: return "Parsed value can't be contained within given type";
-        case Error::EndOfFile: return "stdin EOF has been reached";
-        case Error::Unknown: return "Unknown error (platform error)";
-        default: return "Unknown error";
+            // clang-format off
+        case Error::InvalidInput:   return "Invalid input (failed to parse input)";
+        case Error::OutOfRange:     return "Parsed value can't be contained within given type";
+        case Error::EndOfFile:      return "stdin EOF has been reached";
+        case Error::Unknown:        return "Unknown error (platform error)";
+        default:                    return "Unknown error";
+            // clang-format on
         }
     }
 
