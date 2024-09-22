@@ -2,6 +2,8 @@
 
 Simple console input library written in C++20.
 
+## Motivation
+
 Using `std::cin` is just generally annoying and painful. Furthermore the error handling is quite awkward at best.
 
 ```cpp
@@ -42,28 +44,22 @@ int main() {
 // ...
 ```
 
-This library is an attempt at improving console input in C++ by fixing the pain points explained above by giving the following features:
+This library is intended to be used in my personal projects if I ever have the need to get inputs from `stdin`, but if you feel this library fits your need, feel free to use it. These are the features this library offer:
 
 - Simple function-based input instead of stream-based input of `std::cin`.
 - Line based input: each read consume an entire line of the `stdin`.
 - Improved error handling: using custom type that wraps a variant: `cppread::Result<T>`.
-- Exception-free: no exception thrown from `cppread::read` functions (`cppread::readRepeat` functions can throw though).
-- No buffering: each read done from `stdin` raw.
+- Exception-free: no exception thrown from `cppread::read` functions (`cppread::readRepeat` functions can throw though, see [Repeated read](#repeated-read)).
+- No buffering: each read done from `stdin` raw (performance might be bad because of that though).
 - `const` compatible: you can assign the result of `cppread::read` to a `const` variable easily.
-
-  > ```cpp
-  > // you certainly can do this, but it lacks error handling
-  > const int value = [](int i) { std::cin >> i; }({});
-  >
-  > // versus this (still Result<T> though, you MUST handle errors)
-  > const Result<int> value = read<int>("prompt: ");
-  > ```
 
 ## Example
 
+> See [example](./example/source/main.cpp) for more examples
+
 ### Simple read
 
-> I have ignored error handling to reduce verbosity, see the next section to have a feel on how to handle errors.
+> Error handling are ignored in order to be succinct, see the next section to have a feel on how to handle errors.
 
 ```cpp
 #include <cppread/read.hpp>
@@ -162,43 +158,42 @@ There are helper functions defined in `<cppread/read_repeat.hpp>` header to to d
 #include <cppread/read_repeat.hpp>
 #include <iostream>
 
-using cppread::readRepeat, cppread::Error, cppread::Repeat;
+using cppread::readRepeat, cppread::Error, cppread::Repeat, cppread::Opt;
 
 int main() {
-    const int value = readRepeat<int>("Please enter an integer greater than 42: ", [] (auto& result) {
-        if (not result) {
-            switch (result.error()) {
-            case Error::InvalidInput:
-            case Error::OutOfRange:
-                std::cout << "Invalid input, please try again\n";
-                return Repeat::Cont;    // signal the function to redo the read
-            case Error::EndOfFile:
-            case Error::Unknown:
-                std::cout << "stdin got into an unrecoverable error state!\n";
-                throw std::runtime_error{ toString(result.error()).data() };
+    const auto value = readRepeat<int>("integer greater than 42: ", []<typename T>(T& result) {
+        if constexpr (std::same_as<T, int>) {
+            if (result <= 42) {
+                return false;     // means the parsed value is not OK and should continue the loop and repeat prompt
+            } else {
+                return true;      // means the parsed value is OK and should stop the loop
             }
-        }
+        } else {
+            if (result == Error::EndOfFile or result == Error::Unknown) {
+                // returning a non-null Opt (std::option) will break the loop and the value will be returned
+                return Opt<int>{ 100 };
+            }
 
-        if (result.value() <= 42) {
-            std::cout << "Inputted value is less than or equal to 42, please try again\n";
-            return Repeat::Cont;        // signal the function to redo the read
-        }
+            // returning a null Opt will continue the loop
+            return Opt<int>{};
 
-        return Repeat::Stop;            // signal the function to stop the read
+            // Beware of EOF, if you decides to continue after encountering EOF, the code will stuck
+            // in an infinite loop. Better handle that scenario, using exception for example.
+        }
     });
 
     // consume the value...
 }
 ```
 
-> - This is what I meant when `cppread::readRepeat` can throw.
-> - Furthermore, if you return a `Repeat::Stop` while the `result` contains an error, the function will throw an `std::logic_error`
+> - This is what I meant when `cppread::readRepeat` can throw, you decides whether it can throw or not from the passed function.
+> - The lambda passed into `cppread::readRepeat` function is satisfies `cppread::RepeatFn` concept, see the definition on how to create the lambda.
 
-Why you would want this?
+Why would I want this?
 
 - It is easier to parse in my head when the input validation is done directly in the prompt.
 - The resulting value can be `const`
 
 ### Documentation
 
-This library is a simple library (about 350 LOC), so a dedicated documentation is not necessary. You can see the headers directly to see the documentation (Doxygen).
+This library is a simple library (about 350 LOC, measured using `cloc`), so a dedicated documentation is not necessary. You can read the headers directly to see the documentation (Doxygen).
