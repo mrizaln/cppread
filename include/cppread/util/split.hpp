@@ -4,7 +4,6 @@
 #include "cppread/common.hpp"
 
 #include <array>
-#include <optional>
 
 namespace cppread::util
 {
@@ -12,7 +11,7 @@ namespace cppread::util
     using Split = std::array<Str, N>;
 
     template <std::size_t N>
-    constexpr std::optional<Split<N>> split(Str str, char delim) noexcept
+    constexpr Opt<Split<N>> split(Str str, char delim) noexcept
     {
         Split<N>    result = {};
         std::size_t i      = 0;

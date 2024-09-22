@@ -9,42 +9,46 @@
 
 namespace cppread
 {
-    enum class Repeat
-    {
-        Cont,
-        Stop,
-    };
-
     /**
-     * @brief Read multiple values from stdin.
+     * @brief Read a single value from stdin
+     *
+     * @tparam Fn Callable must have two call overload:
+     *            - `bool(*)(cppread::Tup<T...>)` ->  called on successful read and,
+     *            - `cppread::Opts<T...>(*)(cppread::Error)` -> called on failed read.
+     *
+     *            You can use `cppread::Visit` to create the overload or use a lambda with `if constexpr`
+     *            check on its body.
      *
      * @param prompt The prompt.
-     * @param fn User-provided validation function, return `Repeat::Cont` to redo, `Repeat::Stop` to stop.
+     * @param fn The callable object.
      * @param delim Delimiter, only `char` so you can't use unicode.
+     * @return The parsed value.
      *
-     * @throw std::logic_error When `fn` returns `Repeat::Stop` but value contains error.
-     * @throw User-provided-error If the `fn` throws, this function will throws as well.
+     * @throw <user-provided-error> If the `fn` throws this function will throw as well.
      */
     template <Parseable... Ts, typename Fn>
-        requires(
-            (sizeof...(Ts) > 1)    //
-            and (std::default_initializable<Ts> and ...)
-            and Callable<Fn, Repeat, Results<Ts...>&>
-        )
-    Tuple<Ts...> readRepeat(Str prompt, Fn&& fn, char delim = ' ');
+        requires(sizeof...(Ts) > 1) and (std::default_initializable<Ts> and ...) and RepeatFn<Fn, Tup<Ts...>>
+    Tup<Ts...> readRepeat(Str prompt, Fn&& fn, char delim = ' ');
 
     /**
-     * @brief Read a single value from stdin.
+     * @brief Read a single value from stdin
+     *
+     * @tparam Fn Callable must have two call overload:
+     *            - `bool(*)(T)` ->  called on successful read and,
+     *            - `cppread::Opt<T>(*)(cppread::Error)` -> called on failed read.
+     *
+     *            You can use `cppread::Visit` to create the overload or use a lambda with `if constexpr`
+     *            check on its body.
      *
      * @param prompt The prompt.
-     * @param fn User-provided validation function, return `Repeat::Cont` to redo, `Repeat::Stop` to stop.
+     * @param fn The callable object.
      * @param delim Delimiter, only `char` so you can't use unicode.
+     * @return The parsed value.
      *
-     * @throw std::logic_error When `fn` returns `Repeat::Stop` but value contains error.
-     * @throw User-provided-error If the `fn` throws, this function will throws as well.
+     * @throw <user-provided-error> If the `fn` throws this function will throw as well.
      */
-    template <Parseable T, typename Fn>
-        requires std::default_initializable<T> and Callable<Fn, Repeat, Result<T>&>
+    template <Parseable T, RepeatFn<T> Fn>
+        requires std::default_initializable<T>
     T readRepeat(Str prompt, Fn&& fn, char delim = ' ');
 }
 
@@ -52,52 +56,54 @@ namespace cppread
 //  Implementation
 // =============================================================================
 
-#include <stdexcept>
-
 namespace cppread
 {
     template <Parseable... Ts, typename Fn>
-        requires(
-            (sizeof...(Ts) > 1)    //
-            and (std::default_initializable<Ts> and ...)
-            and Callable<Fn, Repeat, Results<Ts...>&>
-        )
-    Tuple<Ts...> readRepeat(Str prompt, Fn&& fn, char delim)
+        requires(sizeof...(Ts) > 1) and (std::default_initializable<Ts> and ...) and RepeatFn<Fn, Tup<Ts...>>
+    Tup<Ts...> readRepeat(Str prompt, Fn&& fn, char delim)
     {
         while (true) {
             auto result = read<Ts...>(prompt, delim);
-            auto repeat = fn(result);
+            bool repeat = false;
 
-            switch (repeat) {
-            case Repeat::Cont: continue;
-            case Repeat::Stop: {
-                if (result) {
-                    return std::move(result).value();
+            if (result) {
+                repeat = not fn(result.value());
+            } else {
+                auto ret = fn(result.error());
+                if (ret) {
+                    return std::move(ret).value();
                 } else {
-                    throw std::logic_error{ "Parsed value contains error" };
+                    repeat = true;
                 }
             }
+
+            if (not repeat) {
+                return std::move(result).value();
             }
         };
     }
 
-    template <Parseable T, typename Fn>
-        requires std::default_initializable<T> and Callable<Fn, Repeat, Result<T>&>
+    template <Parseable T, RepeatFn<T> Fn>
+        requires std::default_initializable<T>
     T readRepeat(Str prompt, Fn&& fn, char delim)
     {
         while (true) {
             auto result = read<T>(prompt, delim);
-            auto repeat = fn(result);
+            bool repeat = false;
 
-            switch (repeat) {
-            case Repeat::Cont: continue;
-            case Repeat::Stop: {
-                if (result) {
-                    return std::move(result).value();
+            if (result) {
+                repeat = not fn(result.value());
+            } else {
+                auto ret = fn(result.error());
+                if (ret) {
+                    return std::move(ret).value();
                 } else {
-                    throw std::logic_error{ "Parsed value contains error" };
+                    repeat = true;
                 }
             }
+
+            if (not repeat) {
+                return std::move(result).value();
             }
         };
     }

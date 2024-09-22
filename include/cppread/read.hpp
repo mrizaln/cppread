@@ -54,7 +54,7 @@ namespace cppread::detail
         requires(sizeof...(Ts) >= 1) and (std::default_initializable<Ts> and ...)
     Results<Ts...> read_impl(Str prompt, char delim) noexcept
     {
-        using Ret               = Tuple<Ts...>;
+        using Ret               = Tup<Ts...>;
         constexpr std::size_t N = sizeof...(Ts);
 
         // first and foremost, check whether stdin available at all
@@ -81,8 +81,8 @@ namespace cppread::detail
             return Error::InvalidInput;
         }
 
-        Ret                  result = {};
-        std::optional<Error> error  = std::nullopt;
+        Ret        result = {};
+        Opt<Error> error  = std::nullopt;
 
         util::forEachTuple(result, [&]<std::size_t I, typename T>(T& value) {
             if (error) {

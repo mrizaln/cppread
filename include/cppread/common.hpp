@@ -1,6 +1,7 @@
 #ifndef CPPREAD_COMMON_HPP
 #define CPPREAD_COMMON_HPP
 
+#include <optional>
 #include <string_view>
 #include <type_traits>
 #include <utility>
@@ -11,13 +12,16 @@ namespace cppread
     template <typename T>
     concept Fundamental = std::is_fundamental_v<T>;
 
-    template <typename Fn, typename Ret, typename... Args>
-    concept Callable = std::invocable<Fn, Args...> and std::same_as<Ret, std::invoke_result_t<Fn, Args...>>;
-
     using Str = std::string_view;
 
     template <typename... Ts>
-    using Tuple = std::tuple<Ts...>;
+    using Tup = std::tuple<Ts...>;
+
+    template <typename T>
+    using Opt = std::optional<T>;
+
+    template <typename... Ts>
+    using Opts = std::optional<Tup<Ts...>>;
 
     enum class Error : char
     {
@@ -43,6 +47,9 @@ namespace cppread
         }
     }
 
+    /**
+     * @brief Result class that store parsed value or an error
+     */
     template <typename T>
     class Result
     {
@@ -64,7 +71,8 @@ namespace cppread
         T&       value() & noexcept(false) { return std::get<T>(m_value); }
         const T& value() const& noexcept(false) { return std::get<T>(m_value); }
 
-        Error error() const noexcept(false) { return std::get<Error>(m_value); }
+        Error&       error() noexcept(false) { return std::get<Error>(m_value); }
+        const Error& error() const noexcept(false) { return std::get<Error>(m_value); }
 
         std::variant<T, Error>& variant() noexcept { return m_value; }
 
@@ -73,7 +81,35 @@ namespace cppread
     };
 
     template <typename... Ts>
-    using Results = Result<Tuple<Ts...>>;
+    using Results = Result<Tup<Ts...>>;
+
+    /**
+     * @brief Helper class to create a `cppread::RepeatFn`
+     *
+     * @tparam FnRes Callable object/lambda to be called on parse success
+     * @tparam FnErr Callable object/lambda to be called on parse failure
+     */
+    template <typename FnRes, typename FnErr>
+    struct Visit : FnRes, FnErr
+    {
+        using FnRes::operator();
+        using FnErr::operator();
+    };
+
+    template <typename FnRes, typename FnErr>
+    Visit(FnRes, FnErr) -> Visit<FnRes, FnErr>;
+
+    /**
+     * @brief Decides whether `Fn` is a suitable callable object for `cppread::readRepeat` callback
+     *
+     * @tparam Fn The callable object
+     * @tparam T The parsed object if it's successful
+     */
+    template <typename Fn, typename T>
+    concept RepeatFn = requires(const Fn fn, T t, Error error) {
+        { fn(t) } -> std::same_as<bool>;
+        { fn(error) } -> std::same_as<Opt<T>>;
+    };
 }
 
 #endif /* end of include guard: CPPREAD_COMMON_HPP */
