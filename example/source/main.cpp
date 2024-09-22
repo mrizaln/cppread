@@ -66,18 +66,13 @@ try {
     {
         auto value = readRepeat<int>("integer greater than 10: ", []<typename T>(T& result) {
             if constexpr (std::same_as<T, int>) {
-                if (result <= 10) {
-                    return false;
-                } else {
-                    return true;
-                }
+                return result > 10;
             } else {
-                using cppread::Opt;
-
-                if (result != cppread::Error::EndOfFile) {
-                    return Opt<int>{ 100 };
+                switch (result) {
+                case cppread::Error::EndOfFile: [[fallthrough]];
+                case cppread::Error::Unknown: return cppread::Opt<int>{ 100 };
+                default: return cppread::Opt<int>{};
                 }
-                return Opt<int>{};    // infinite loop if EOF is eaten :D
             }
         });
 
@@ -91,22 +86,35 @@ try {
             cppread::Visit{
                 [](auto& tuple) {
                     auto [result, _] = tuple;
-                    if (result <= 10) {
-                        return false;
-                    } else {
-                        return true;
-                    }
+                    return result > 10;
                 },
                 [](cppread::Error error) -> cppread::Opts<int, int> {
-                    if (error != cppread::Error::EndOfFile) {
-                        return std::tuple{ 100, 100 };
+                    switch (error) {
+                    case cppread::Error::EndOfFile: [[fallthrough]];
+                    case cppread::Error::Unknown: return std::tuple{ 100, 100 };
+                    default: return std::nullopt;
                     }
-                    return std::nullopt;    // infinite loop if EOF is eaten :D
                 },
             }
         );
 
         println("value1: {} | value2: {}", value1, value2);
+    }
+
+    {
+        int value = 0;
+        while (value <= 10) {
+            auto result = read<int>("enter an integer greater than 10: ");
+            if (not result) {
+                switch (result.error()) {
+                case cppread::Error::EndOfFile: [[fallthrough]];
+                case cppread::Error::Unknown: value = 100;
+                default: /* do nothing */;
+                }
+            } else {
+                value = result.value();
+            }
+        }
     }
 
 } catch (cppread::Error error) {
