@@ -82,21 +82,19 @@ int main()
 
     // read until get value
     "read value until condition met"_test = [] {
-        auto value = cppread::readRepeat<int>("please enter an integer: ", [&](auto& value) {
-            if (not value) {
+        auto value = cppread::readRepeat<int>("please enter an integer: ", [&]<typename T>(T& value) {
+            if constexpr (std::same_as<T, cppread::Error>) {
                 using E = cppread::Error;
-                switch (value.error()) {
+                switch (value) {
                 case E::InvalidInput: fmt::println("Invalid input"); break;
                 case E::OutOfRange: fmt::println("Input value is out of range"); break;
-                default: value = 10;
+                default: return cppread::Opt<int>{ 10 };
                 }
-
-                return cppread::Repeat::Cont;
+                return cppread::Opt<int>{};
+            } else {
+                // validate...
+                return true;
             }
-
-            // validate...
-
-            return cppread::Repeat::Stop;
         });
 
         fmt::println("value: '{}'", value);

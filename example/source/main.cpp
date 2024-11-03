@@ -83,7 +83,7 @@ try {
     {
         auto [value1, value2] = readRepeat<int, int>(
             "two integer (first one must be greater than 10): ",
-            cppread::Visit{
+            cppread::Overload{
                 [](auto& tuple) {
                     auto [result, _] = tuple;
                     return result > 10;
