@@ -2,11 +2,12 @@
 #define CPPREAD_DETAIL_FOR_EACH_TUPLE_HPP
 
 #include <tuple>
+#include <utility>
 
 namespace cppread::util
 {
     template <typename T, typename Fn>
-    inline constexpr auto forEachTuple(T&& tuple, Fn&& fn)
+    constexpr auto forEachTuple(T&& tuple, Fn&& fn)
     {
         using Tup               = std::decay_t<T>;
         constexpr std::size_t N = std::tuple_size_v<std::decay_t<Tup>>;

@@ -24,10 +24,10 @@ namespace cppread
      * @param delim Delimiter, only `char` so you can't use unicode.
      * @return The parsed value.
      *
-     * @throw <user-provided-error> If the `fn` throws this function will throw as well.
+     * @throw <user-provided-error> If the `fn` throws, this function will throw as well.
      */
     template <Parseable... Ts, typename Fn>
-        requires(sizeof...(Ts) > 1) and (std::default_initializable<Ts> and ...) and RepeatFn<Fn, Tup<Ts...>>
+        requires(sizeof...(Ts) > 1) and RepeatFn<Fn, Tup<Ts...>>
     Tup<Ts...> readRepeat(Str prompt, Fn&& fn, char delim = ' ');
 
     /**
@@ -45,10 +45,9 @@ namespace cppread
      * @param delim Delimiter, only `char` so you can't use unicode.
      * @return The parsed value.
      *
-     * @throw <user-provided-error> If the `fn` throws this function will throw as well.
+     * @throw <user-provided-error> If the `fn` throws, this function will throw as well.
      */
     template <Parseable T, RepeatFn<T> Fn>
-        requires std::default_initializable<T>
     T readRepeat(Str prompt, Fn&& fn, char delim = ' ');
 }
 
@@ -59,7 +58,7 @@ namespace cppread
 namespace cppread
 {
     template <Parseable... Ts, typename Fn>
-        requires(sizeof...(Ts) > 1) and (std::default_initializable<Ts> and ...) and RepeatFn<Fn, Tup<Ts...>>
+        requires(sizeof...(Ts) > 1) and RepeatFn<Fn, Tup<Ts...>>
     Tup<Ts...> readRepeat(Str prompt, Fn&& fn, char delim)
     {
         while (true) {
@@ -84,7 +83,6 @@ namespace cppread
     }
 
     template <Parseable T, RepeatFn<T> Fn>
-        requires std::default_initializable<T>
     T readRepeat(Str prompt, Fn&& fn, char delim)
     {
         while (true) {

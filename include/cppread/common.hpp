@@ -51,7 +51,7 @@ namespace cppread
      * @brief Result class that store parsed value or an error
      */
     template <typename T>
-    class Result
+    class [[nodiscard]] Result
     {
     public:
         template <typename TT>
@@ -66,6 +66,9 @@ namespace cppread
         }
 
         explicit operator bool() const noexcept { return std::holds_alternative<T>(m_value); }
+
+        bool is_value() const { return static_cast<bool>(*this); }
+        bool is_error() const { return not is_value(); }
 
         T&&      value() && noexcept(false) { return std::move(std::get<T>(m_value)); }
         T&       value() & noexcept(false) { return std::get<T>(m_value); }
@@ -90,14 +93,14 @@ namespace cppread
      * @tparam FnErr Callable object/lambda to be called on parse failure
      */
     template <typename FnRes, typename FnErr>
-    struct Visit : FnRes, FnErr
+    struct Overload : FnRes, FnErr
     {
         using FnRes::operator();
         using FnErr::operator();
     };
 
     template <typename FnRes, typename FnErr>
-    Visit(FnRes, FnErr) -> Visit<FnRes, FnErr>;
+    Overload(FnRes, FnErr) -> Overload<FnRes, FnErr>;
 
     /**
      * @brief Decides whether `Fn` is a suitable callable object for `cppread::readRepeat` callback

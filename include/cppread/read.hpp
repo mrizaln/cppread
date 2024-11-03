@@ -4,7 +4,6 @@
 #include "cppread/common.hpp"
 #include "cppread/parser.hpp"
 
-#include "cppread/util/for_each_tuple.hpp"
 #include "cppread/util/split.hpp"
 
 // =============================================================================
@@ -20,7 +19,7 @@ namespace cppread
      * @param delim Delimiter, only `char` so you can't use unicode
      */
     template <Parseable... Ts>
-        requires(sizeof...(Ts) > 1) and (std::default_initializable<Ts> and ...)
+        requires(sizeof...(Ts) > 1)
     Results<Ts...> read(Str prompt, char delim = ' ') noexcept;
 
     /**
@@ -30,7 +29,6 @@ namespace cppread
      * @param delim Delimiter, only `char` so you can't use unicode.
      */
     template <Parseable T>
-        requires std::default_initializable<T>
     Result<T> read(Str prompt, char delim = ' ') noexcept;
 
     /**
@@ -51,10 +49,9 @@ namespace cppread
 namespace cppread::detail
 {
     template <Parseable... Ts>
-        requires(sizeof...(Ts) >= 1) and (std::default_initializable<Ts> and ...)
+        requires(sizeof...(Ts) >= 1)
     Results<Ts...> read_impl(Str prompt, char delim) noexcept
     {
-        using Ret               = Tup<Ts...>;
         constexpr std::size_t N = sizeof...(Ts);
 
         // first and foremost, check whether stdin available at all
@@ -64,9 +61,9 @@ namespace cppread::detail
 
         std::fwrite(prompt.data(), sizeof(Str::value_type), prompt.size(), stdout);
 
+        // get line; no buffering whatsoever so it will be slow
         std::string line = {};
         int         ch   = std::fgetc(stdin);
-
         while (ch != '\n' and ch != EOF) {
             line.push_back(static_cast<char>(ch));
             ch = std::fgetc(stdin);
@@ -79,42 +76,22 @@ namespace cppread::detail
         auto parts = util::split<N>(line, delim);
         if (not parts) {
             return Error::InvalidInput;
+        } else {
+            return parseIntoTuple<Ts...>(*parts);
         }
-
-        Ret        result = {};
-        Opt<Error> error  = std::nullopt;
-
-        util::forEachTuple(result, [&]<std::size_t I, typename T>(T& value) {
-            if (error) {
-                return;    // skip parse if error has happened before
-            }
-
-            if (auto parsed = parse<T>(parts->at(I)); parsed) {
-                value = std::move(parsed).value();
-            } else {
-                error = parsed.error();
-            }
-        });
-
-        if (error) {
-            return error.value();
-        }
-
-        return result;
     }
 }
 
 namespace cppread
 {
     template <Parseable... Ts>
-        requires(sizeof...(Ts) > 1) and (std::default_initializable<Ts> and ...)
+        requires(sizeof...(Ts) > 1)
     Results<Ts...> read(Str prompt, char delim) noexcept
     {
         return detail::read_impl<Ts...>(prompt, delim);
     }
 
     template <Parseable T>
-        requires std::default_initializable<T>
     Result<T> read(Str prompt, char delim) noexcept
     {
         auto result = detail::read_impl<T>(prompt, delim);
