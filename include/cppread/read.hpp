@@ -3,8 +3,7 @@
 
 #include "cppread/common.hpp"
 #include "cppread/parser.hpp"
-
-#include "cppread/util/split.hpp"
+#include "cppread/util.hpp"
 
 // =============================================================================
 //  Forward declarations
@@ -16,7 +15,7 @@ namespace cppread
      * @brief Read multiple values from stdin.
      *
      * @param prompt The prompt.
-     * @param delim Delimiter, only `char` so you can't use unicode
+     * @param delim Delimiter, only `char` so you can't use unicode.
      */
     template <Parseable... Ts>
         requires(sizeof...(Ts) > 1)
@@ -61,24 +60,16 @@ namespace cppread::detail
 
         std::fwrite(prompt.data(), sizeof(Str::value_type), prompt.size(), stdout);
 
-        // get line; no buffering whatsoever so it will be slow
-        std::string line = {};
-        int         ch   = std::fgetc(stdin);
-        while (ch != '\n' and ch != EOF) {
-            line.push_back(static_cast<char>(ch));
-            ch = std::fgetc(stdin);
-        }
-
-        if (std::feof(stdin)) {
+        auto line = util::readLine();
+        if (not line) {
             return Error::EndOfFile;
         }
 
-        auto parts = util::split<N>(line, delim);
-        if (not parts) {
-            return Error::InvalidInput;
-        } else {
+        auto parts = util::split<N>(line->view(), delim);
+        if (parts) {
             return parseIntoTuple<Ts...>(*parts);
         }
+        return Error::InvalidInput;
     }
 }
 

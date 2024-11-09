@@ -2,7 +2,7 @@
 #define CPPREAD_PARSER_HPP
 
 #include "cppread/common.hpp"
-#include "cppread/util/for_each_tuple.hpp"
+#include "cppread/util.hpp"
 
 #include <array>
 #include <cctype>
@@ -32,7 +32,11 @@ namespace cppread
         Result<bool> parse(Str str) const noexcept
         {
             using Buf = std::array<char, 6>;
-            Buf buf   = {};
+
+            constexpr auto litFalse = Buf{ "false" };
+            constexpr auto litTrue  = Buf{ "true" };
+
+            auto buf = Buf{};
 
             auto size = std::min(str.size(), buf.size());
             for (std::size_t i = 0; i < size; ++i) {
@@ -45,9 +49,9 @@ namespace cppread
                 return true;
             }
 
-            if (buf == Buf{ "false" }) {
+            if (buf == litFalse) {
                 return false;
-            } else if (buf == Buf{ "true" }) {
+            } else if (buf == litTrue) {
                 return true;
             }
 
