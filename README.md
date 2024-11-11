@@ -47,9 +47,9 @@ int main() {
 This library is intended to be used in my personal projects if I ever have the need to get inputs from `stdin`, but if you feel this library fits your need, feel free to use it. These are the features this library offer:
 
 - Simple function-based input instead of stream-based input of `std::cin`.
-- Line based input: each read consume an entire line of the `stdin`.
+- Line based input: each read consume an entire line of the `stdin` (use `getline` on linux (glibc) else `getch`; define `CPPREAD_ENABLE_GETLINE` to override).
 - Improved error handling: using custom type that wraps a variant: `cppread::Result<T>`.
-- Exception-free: no exception thrown from `cppread::read` functions (`cppread::readRepeat` functions can throw though, see [Repeated read](#repeated-read)).
+- Exception-free: no exception thrown from `cppread::read` functions.
 - No buffering: each read done from `stdin` raw (performance might be bad because of that though).
 - `const` compatible: you can assign the result of `cppread::read` to a `const` variable easily.
 
@@ -115,7 +115,7 @@ try {
 
 ### Repeated read
 
-There are certainly a lot of times when you want to get value(s) from the console input with certain conditions. For example, if you want to get an `int` with value greater than `42`, you might do something like this:
+For example, if you want to get an `int` with value greater than `42`, you might do something like this:
 
 ```cpp
 #include <cppread/read.hpp>
@@ -123,8 +123,8 @@ There are certainly a lot of times when you want to get value(s) from the consol
 
 using cppread::read, cppread::Error;
 
-int main() {
-    int value = 0;
+// wrap the read into a function/lambda so that the returned value can be const
+auto readRepeat() {
     while (true) {
         auto result = read<int>("Please enter an integer greater than 42: ");
         if (not result) {
@@ -145,54 +145,16 @@ int main() {
             continue;
         }
 
-        value = result.value();
+        return result.value();
     }
-
-    // consume the value...
 }
-```
-
-There are helper functions defined in `<cppread/read_repeat.hpp>` header to to do just exactly that:
-
-```cpp
-#include <cppread/read_repeat.hpp>
-#include <iostream>
-
-using cppread::readRepeat, cppread::Error, cppread::Repeat, cppread::Opt;
 
 int main() {
-    const auto value = readRepeat<int>("integer greater than 42: ", []<typename T>(T& result) {
-        if constexpr (std::same_as<T, int>) {
-            if (result <= 42) {
-                return false;     // means the parsed value is not OK and should continue the loop and repeat prompt
-            } else {
-                return true;      // means the parsed value is OK and should stop the loop
-            }
-        } else {
-            if (result == Error::EndOfFile or result == Error::Unknown) {
-                // returning a non-null Opt (std::option) will break the loop and the value will be returned
-                return Opt<int>{ 100 };
-            }
-
-            // returning a null Opt will continue the loop
-            return Opt<int>{};
-
-            // Beware of EOF, if you decides to continue after encountering EOF, the code will stuck
-            // in an infinite loop. Better handle that scenario, using exception for example.
-        }
-    });
+    const int value = readRepeat();
 
     // consume the value...
 }
 ```
-
-> - This is what I meant when `cppread::readRepeat` can throw, you decides whether it can throw or not from the passed function.
-> - The lambda passed into `cppread::readRepeat` function is satisfies `cppread::RepeatFn` concept, see the definition on how to create the lambda.
-
-Why would I want this?
-
-- It is easier to parse in my head when the input validation is done directly in the prompt.
-- The resulting value can be `const`
 
 ## Documentation
 
@@ -202,9 +164,18 @@ This library is a simple library (about 350 LOC, measured using `cloc`), so a de
 
 Benchmark performed on Intel(R) Core(TM) i5-10500H (12 threads) with the frequency locked at 2.5GHz, using `hyperfine` with parameters `--warmup 3`. The benchmark involves parsing about 625k lines of 4 `(float | int)` separated by space (generated using [this script](example/random_gen.sh); `nan` removed). The benchmark code is [here](example/source/bench.cpp).
 
-|                   | `std::cin`           | `cppread` (`getline`) | `cppread` (`getch`)   |
+### time
+
+|                   | `std::cin`           | `cppread` (`getline`) | `cppread` (`fgetc`)   |
 | ----------------- | -------------------- | --------------------- | --------------------- |
 | `615217 4-floats` | `2.280 s ±  0.012 s` | `252.6 ms ±   3.2 ms` | `449.8 ms ±   7.0 ms` |
 | `625000 4-ints`   | `1.141 s ±  0.015 s` | `164.6 ms ±   1.3 ms` | `306.8 ms ±  10.0 ms` |
 
 As you can see, this library is generally up to 9x faster than `std::cin`. Now, that is not impressive, since the fact is that `std::cin` is just that slow.
+
+### memory
+
+|                   | `std::cin`           | `cppread` (`getline`) | `cppread` (`fgetc`)   |
+| ----------------- | -------------------- | --------------------- | --------------------- |
+| `615217 4-floats` | `2.280 s ±  0.012 s` | `252.6 ms ±   3.2 ms` | `449.8 ms ±   7.0 ms` |
+| `625000 4-ints`   | `1.141 s ±  0.015 s` | `164.6 ms ±   1.3 ms` | `306.8 ms ±  10.0 ms` |
