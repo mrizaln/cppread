@@ -47,7 +47,7 @@ int main() {
 This library is intended to be used in my personal projects if I ever have the need to get inputs from `stdin`, but if you feel this library fits your need, feel free to use it. These are the features this library offer:
 
 - Simple function-based input instead of stream-based input of `std::cin`.
-- Line based input: each read consume an entire line of the `stdin` (use `getline` on linux (glibc) else `getch`; define `CPPREAD_ENABLE_GETLINE` to override).
+- Line based input: each read consume an entire line of the `stdin` (using `getline` on linux (glibc) else `fgets`; define/undef `CPPREAD_ENABLE_GETLINE` to override).
 - Improved error handling: using custom type that wraps a variant: `cppread::Result<T>`.
 - Exception-free: no exception thrown from `cppread::read` functions.
 - No buffering: each read done from `stdin` raw (performance might be bad because of that though).
@@ -162,20 +162,32 @@ This library is a simple library (about 350 LOC, measured using `cloc`), so a de
 
 ## Benchmark
 
-Benchmark performed on Intel(R) Core(TM) i5-10500H (12 threads) with the frequency locked at 2.5GHz, using `hyperfine` with parameters `--warmup 3`. The benchmark involves parsing about 625k lines of 4 `(float | int)` separated by space (generated using [this script](example/random_gen.sh); `nan` removed). The benchmark code is [here](example/source/bench.cpp).
-
 ### time
 
-|                   | `std::cin`           | `cppread` (`getline`) | `cppread` (`fgetc`)   |
-| ----------------- | -------------------- | --------------------- | --------------------- |
-| `615217 4-floats` | `2.280 s ±  0.012 s` | `252.6 ms ±   3.2 ms` | `449.8 ms ±   7.0 ms` |
-| `625000 4-ints`   | `1.141 s ±  0.015 s` | `164.6 ms ±   1.3 ms` | `306.8 ms ±  10.0 ms` |
+> - Benchmark performed on Intel(R) Core(TM) i5-10500H (12 threads) with the frequency locked at 2.5GHz.
+> - `hyperfine` is used with parameter `--warmup 3`.
+> - The benchmark involves parsing about 625k lines of 4 `(float | int)` separated by space (generated using [this script](example/random_gen.sh); `nan` removed).
+> - The benchmark code is [here](example/source/bench.cpp).
 
-As you can see, this library is generally up to 9x faster than `std::cin`. Now, that is not impressive, since the fact is that `std::cin` is just that slow.
+|                            | `615217 4-floats`     | `625000 4-ints`     |
+| -------------------------- | --------------------- | ------------------- |
+| `std::cin` (unsynced)      | `1.169  s ± 0.004  s` | `310.8 ms ± 3.2 ms` |
+| `cppread::read` (getline)  | `274.0 ms ± 2.3   ms` | `173.2 ms ± 0.6 ms` |
+| `cppread::read` (fgets)    | `297.5 ms ± 2.5   ms` | `195.4 ms ± 4.0 ms` |
+| `cppread::BufReader::read` | `284.2 ms ± 5.7   ms` | `173.0 ms ± 2.0 ms` |
 
-### memory
+As you can see, this library is generally faster than `std::cin` (unsynced) and can gain up to 4x speedup.
 
-|                   | `std::cin`           | `cppread` (`getline`) | `cppread` (`fgetc`)   |
-| ----------------- | -------------------- | --------------------- | --------------------- |
-| `615217 4-floats` | `2.280 s ±  0.012 s` | `252.6 ms ±   3.2 ms` | `449.8 ms ±   7.0 ms` |
-| `625000 4-ints`   | `1.141 s ±  0.015 s` | `164.6 ms ±   1.3 ms` | `306.8 ms ±  10.0 ms` |
+### allocation
+
+> - Measured using `memusage`.
+> - Allocations not done by the library is deducted from the total number.
+
+|                            | calls to malloc/new |
+| -------------------------- | ------------------: |
+| `std::cin` (unsynced)      |           `2460901` |
+| `cppread::read` (getline)  |            `615242` |
+| `cppread::read` (fgets)    |            `615242` |
+| `cppread::BufReader::read` |                `30` |
+
+Since `cppread::BufReader` retains its buffer for its lifetime (and it grows as needed), allocation only happen few times at the start. This can help reduce memory fragmentation.
