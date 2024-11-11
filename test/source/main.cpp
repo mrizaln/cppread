@@ -1,5 +1,4 @@
 #include <cppread/read.hpp>
-#include <cppread/read_repeat.hpp>
 
 #include <fmt/core.h>
 #include <fmt/ranges.h>
@@ -18,7 +17,7 @@ struct cppread::Parser<Idk>
 {
     Result<Idk> parse(Str str) const noexcept
     {
-        auto split = util::split<2>(str, ' ');
+        auto split = cppread::util::split<2>(str, ' ');
         if (not split) {
             return Error::InvalidInput;
         }
@@ -82,22 +81,25 @@ int main()
 
     // read until get value
     "read value until condition met"_test = [] {
-        auto value = cppread::readRepeat<int>("please enter an integer: ", [&]<typename T>(T& value) {
-            if constexpr (std::same_as<T, cppread::Error>) {
-                using E = cppread::Error;
-                switch (value) {
-                case E::InvalidInput: fmt::println("Invalid input"); break;
-                case E::OutOfRange: fmt::println("Input value is out of range"); break;
-                default: return cppread::Opt<int>{ 10 };
-                }
-                return cppread::Opt<int>{};
-            } else {
-                // validate...
-                return true;
+        int result = 0;
+        while (true) {
+            auto value = cppread::read<int>("please enter an integer: ");
+            if (value) {
+                result = value.value();
+                break;
             }
-        });
 
-        fmt::println("value: '{}'", value);
+            using E = cppread::Error;
+            switch (value.error()) {
+            case E::InvalidInput: fmt::println("Invalid input"); continue;
+            case E::OutOfRange: fmt::println("Input value is out of range"); continue;
+            default: break;
+            }
+
+            value = 10;
+            break;
+        }
+        fmt::println("value: '{}'", result);
     };
 
     "read custom struct"_test = [] {
