@@ -6,7 +6,7 @@
 #include <array>
 #include <utility>
 
-#ifdef __GLIBC__
+#if defined(__GLIBC__) and defined(CPPREAD_ENABLE_GETLINE)
 #    include <memory>
 #else
 #    include <string>
@@ -20,7 +20,7 @@ namespace cppread::util
      */
     class Line
     {
-#ifdef __GLIBC__
+#if defined(__GLIBC__) and defined(CPPREAD_ENABLE_GETLINE)
     public:
         Line(char* data, std::size_t size) noexcept
             : m_data{ data, &free }
@@ -56,7 +56,7 @@ namespace cppread::util
      */
     inline Opt<Line> readLine() noexcept
     {
-#ifdef __GLIBC__
+#if defined(__GLIBC__) and defined(CPPREAD_ENABLE_GETLINE)
         char*  line  = nullptr;
         size_t len   = 0;
         auto   nread = getline(&line, &len, stdin);
