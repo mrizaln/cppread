@@ -6,87 +6,8 @@
 #include <array>
 #include <utility>
 
-#if defined(__GLIBC__) and defined(CPPREAD_ENABLE_GETLINE)
-#    include <memory>
-#else
-#    include <string>
-#endif
-
 namespace cppread::util
 {
-    /**
-     * @class Line
-     * @brief An owning wrapper around a line of text read from stdin.
-     */
-    class Line
-    {
-#if defined(__GLIBC__) and defined(CPPREAD_ENABLE_GETLINE)
-    public:
-        Line(char* data, std::size_t size) noexcept
-            : m_data{ data, &free }
-            , m_size{ size }
-        {
-        }
-
-        Str view() const noexcept { return Str{ m_data.get(), m_size }; }
-
-    private:
-        using Ptr = std::unique_ptr<char, decltype(&free)>;
-
-        Ptr         m_data;
-        std::size_t m_size;
-
-#else
-    public:
-        Line(Str data) noexcept
-            : m_data{ std::move(data) }
-        {
-        }
-
-        Str view() const noexcept { return m_data; }
-
-    private:
-        std::string m_data;
-#endif
-    };
-
-    /**
-     * @brief Read a line from stdin.
-     * @return An optional containing the line read, or an empty optional if EOF is reached.
-     */
-    inline Opt<Line> readLine() noexcept
-    {
-#if defined(__GLIBC__) and defined(CPPREAD_ENABLE_GETLINE)
-        char*  line  = nullptr;
-        size_t len   = 0;
-        auto   nread = getline(&line, &len, stdin);
-
-        if (nread == -1) {
-            return {};
-        } else if (line[nread - 1] == '\n') {
-            // remove trailing newline
-            line[nread - 1] = '\0';
-        }
-
-        return Opt<Line>{ std::in_place, line, static_cast<std::size_t>(nread) };
-#else
-        // get line; no buffering whatsoever so it will be slow
-        auto line = std::string{};
-        line.reserve(256);
-
-        auto ch = std::fgetc(stdin);
-        while (ch != '\n' and ch != EOF) {
-            line.push_back(static_cast<char>(ch));
-            ch = std::fgetc(stdin);
-        }
-
-        if (std::feof(stdin)) {
-            return {};
-        }
-        return Opt<Line>{ std::in_place, std::move(line) };
-#endif
-    }
-
     /**
      * @brief Split a string into an array of strings using a delimiter.
      *
@@ -110,7 +31,7 @@ namespace cppread::util
             }
         }
 
-        while (i < N and j < str.size() and str[j] != '\0') {
+        while (i < N and j < str.size() and str[j] != '\0' and str[j] != '\n') {
             std::size_t pos = str.find(delim, j);
 
             // in case multiple delimiters are together
