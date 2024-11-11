@@ -67,12 +67,24 @@ namespace cppread
 
         explicit operator bool() const noexcept { return std::holds_alternative<T>(m_value); }
 
-        bool is_value() const { return static_cast<bool>(*this); }
-        bool is_error() const { return not is_value(); }
+        bool is_value() const noexcept { return static_cast<bool>(*this); }
+        bool is_error() const noexcept { return not is_value(); }
 
         T&&      value() && noexcept(false) { return std::move(std::get<T>(m_value)); }
         T&       value() & noexcept(false) { return std::get<T>(m_value); }
         const T& value() const& noexcept(false) { return std::get<T>(m_value); }
+
+        template <typename U>
+        T&& value_or(U&& defaultt) && noexcept
+        {
+            return *this ? std::move(std::get<T>(m_value)) : std::forward<U>(defaultt);
+        }
+
+        template <typename U>
+        const T& value_or(T&& defaultt) const& noexcept
+        {
+            return *this ? std::get<T>(m_value) : std::forward<U>(defaultt);
+        }
 
         Error&       error() noexcept(false) { return std::get<Error>(m_value); }
         const Error& error() const noexcept(false) { return std::get<Error>(m_value); }
@@ -85,22 +97,6 @@ namespace cppread
 
     template <typename... Ts>
     using Results = Result<Tup<Ts...>>;
-
-    /**
-     * @brief Helper class to create a `cppread::RepeatFn`
-     *
-     * @tparam FnRes Callable object/lambda to be called on parse success
-     * @tparam FnErr Callable object/lambda to be called on parse failure
-     */
-    template <typename FnRes, typename FnErr>
-    struct Overload : FnRes, FnErr
-    {
-        using FnRes::operator();
-        using FnErr::operator();
-    };
-
-    template <typename FnRes, typename FnErr>
-    Overload(FnRes, FnErr) -> Overload<FnRes, FnErr>;
 
     /**
      * @brief Decides whether `Fn` is a suitable callable object for `cppread::readRepeat` callback
