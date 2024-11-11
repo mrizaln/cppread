@@ -19,7 +19,7 @@ namespace cppread
      */
     template <Parseable... Ts>
         requires(sizeof...(Ts) > 1)
-    Results<Ts...> read(Str prompt, char delim = ' ') noexcept;
+    Results<Ts...> read(Opt<Str> prompt = std::nullopt, char delim = ' ') noexcept;
 
     /**
      * @brief Read a single value from stdin.
@@ -28,14 +28,14 @@ namespace cppread
      * @param delim Delimiter, only `char` so you can't use unicode.
      */
     template <Parseable T>
-    Result<T> read(Str prompt, char delim = ' ') noexcept;
+    Result<T> read(Opt<Str> prompt = std::nullopt, char delim = ' ') noexcept;
 
     /**
      * @brief Read a string until '\n' is found (aka getline)
      *
      * @param prompt The prompt.
      */
-    inline Result<std::string> read(Str prompt) noexcept;
+    inline Result<std::string> read(Opt<Str> prompt = std::nullopt) noexcept;
 }
 
 // =============================================================================
@@ -49,7 +49,7 @@ namespace cppread::detail
 {
     template <Parseable... Ts>
         requires(sizeof...(Ts) >= 1)
-    Results<Ts...> read_impl(Str prompt, char delim) noexcept
+    Results<Ts...> read_impl(Opt<Str> prompt, char delim) noexcept
     {
         constexpr std::size_t N = sizeof...(Ts);
 
@@ -58,7 +58,9 @@ namespace cppread::detail
             return Error::Unknown;
         }
 
-        std::fwrite(prompt.data(), sizeof(Str::value_type), prompt.size(), stdout);
+        if (prompt) {
+            std::fwrite(prompt->data(), sizeof(Str::value_type), prompt->size(), stdout);
+        }
 
         auto line = util::readLine();
         if (not line) {
@@ -77,13 +79,13 @@ namespace cppread
 {
     template <Parseable... Ts>
         requires(sizeof...(Ts) > 1)
-    Results<Ts...> read(Str prompt, char delim) noexcept
+    Results<Ts...> read(Opt<Str> prompt, char delim) noexcept
     {
         return detail::read_impl<Ts...>(prompt, delim);
     }
 
     template <Parseable T>
-    Result<T> read(Str prompt, char delim) noexcept
+    Result<T> read(Opt<Str> prompt, char delim) noexcept
     {
         auto result = detail::read_impl<T>(prompt, delim);
         if (result) {
@@ -92,7 +94,7 @@ namespace cppread
         return result.error();
     }
 
-    inline Result<std::string> read(Str prompt) noexcept
+    inline Result<std::string> read(Opt<Str> prompt) noexcept
     {
         auto result = detail::read_impl<std::string>(prompt, '\n');
         if (result) {
