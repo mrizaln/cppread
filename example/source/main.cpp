@@ -1,5 +1,5 @@
 #include <cppread/read.hpp>
-#include <cppread/read_repeat.hpp>
+#include <cppread/buf_read.hpp>
 
 #include <iostream>
 #include <format>
@@ -9,7 +9,6 @@
 #define println(...) std::cout << std::format(__VA_ARGS__) << '\n'
 
 using cppread::read;
-using cppread::readRepeat;
 
 int main()
 try {
@@ -64,39 +63,45 @@ try {
 
     // read repeatedly until condition met (using if constexpr lambda)
     {
-        auto value = readRepeat<int>("integer greater than 10: ", []<typename T>(T& result) {
-            if constexpr (std::same_as<T, int>) {
-                return result > 10;
-            } else {
-                switch (result) {
-                case cppread::Error::EndOfFile: [[fallthrough]];
-                case cppread::Error::Unknown: return cppread::Opt<int>{ 100 };
-                default: return cppread::Opt<int>{};
+        const auto readRepeat = [] {
+            while (true) {
+                auto value = read<int>("integer greater than 10: ");
+                if (value and value.value() > 10) {
+                    return value.value();
+                } else {
+                    switch (value.error()) {
+                    case cppread::Error::EndOfFile: [[fallthrough]];
+                    case cppread::Error::Unknown: return 100;
+                    default: continue;
+                    }
                 }
             }
-        });
+        };
+        const auto value = readRepeat();
 
         println("value: {}", value);
     }
 
     // read repeatedly until condition met (using cppread::Visit)
     {
-        auto [value1, value2] = readRepeat<int, int>(
-            "two integer (first one must be greater than 10): ",
-            cppread::Overload{
-                [](auto& tuple) {
-                    auto [result, _] = tuple;
-                    return result > 10;
-                },
-                [](cppread::Error error) -> cppread::Opts<int, int> {
-                    switch (error) {
+        const auto readRepeat = [] {
+            while (true) {
+                auto result = read<int, int>("two integer (first one must be greater than 10): ");
+                if (result) {
+                    const auto& [left, _] = result.value();
+                    if (left > 10) {
+                        return result.value();
+                    }
+                } else {
+                    switch (result.error()) {
                     case cppread::Error::EndOfFile: [[fallthrough]];
                     case cppread::Error::Unknown: return std::tuple{ 100, 100 };
-                    default: return std::nullopt;
+                    default: continue;
                     }
-                },
+                }
             }
-        );
+        };
+        const auto [value1, value2] = readRepeat();
 
         println("value1: {} | value2: {}", value1, value2);
     }

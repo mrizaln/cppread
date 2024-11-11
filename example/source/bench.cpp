@@ -1,22 +1,60 @@
-#undef CPPREAD_ENABLE_GETLINE
 #include <cppread/read.hpp>
+#include <cppread/buf_read.hpp>
+
+#include <CLI/CLI.hpp>
 
 #include <chrono>
+#include <iostream>
+#include <map>
 #include <print>
-#include <string_view>
+#include <utility>
 
-#ifdef USE_CIN
-#    include <iostream>
-#endif
-
-enum class Input
+enum class Bench
 {
     Int,
     Float,
+    Control,    // empty bench, measure overhead
+};
+
+// default reader, no buf
+struct DefReader
+{
+    template <typename... Ts>
+    auto read()
+    {
+        return cppread::read<Ts...>();
+    }
+};
+
+struct CinReader
+{
+    template <typename... Ts>
+    cppread::Results<Ts...> read()
+    {
+        std::ios_base::sync_with_stdio(false);
+
+        auto values  = std::tuple<Ts...>{};
+        auto handler = [&]<std::size_t... Is>(std::index_sequence<Is...>) {
+            ((std::cin >> std::get<Is>(values)), ...);
+        };
+        handler(std::index_sequence_for<Ts...>{});
+
+        if (std::cin.fail()) {
+            return cppread::Error::InvalidInput;
+        } else {
+            return { std::move(values) };
+        }
+    }
+};
+
+const std::map<std::string, Bench> TYPE_STR{
+    { "int", Bench::Int },
+    { "float", Bench::Float },
+    { "control", Bench::Control },
 };
 
 template <typename T>
-void bench()
+void bench(auto& reader)
 {
     namespace chr = std::chrono;
     using Clock   = chr::steady_clock;
@@ -27,24 +65,13 @@ void bench()
     auto count  = 0uz;
 
     while (true) {
-#ifdef USE_CIN
-        T a, b, c, d;
-        std::cin >> a >> b >> c >> d;
-        if (std::cin.fail()) {
-            break;
-        } else {
-            values.emplace_back(a, b, c, d);
-            ++count;
-        }
-#else
-        auto result = cppread::read<T, T, T, T>();
+        auto result = reader.template read<T, T, T, T>();
         if (not result) {
             break;
         } else {
             values.push_back(std::move(result).value());
             ++count;
         }
-#endif
     }
 
     auto elapsed = Clock::now() - start;
@@ -57,18 +84,52 @@ void bench()
 
 int main(int argc, char** argv)
 {
-    if (argc != 2) {
-        std::println("Usage: {} <int|float>", argv[0]);
-        return 1;
+    auto app = CLI::App{ "cppread bench" };
+
+    Bench type    = Bench::Float;
+    bool  useCin  = false;
+    bool  bufRead = false;
+
+    app.add_option("type", type, "The type to bench")
+        ->required()
+        ->transform(CLI::CheckedTransformer(TYPE_STR, CLI::ignore_case));
+    app.add_flag("--cin", useCin, "Use cin instead");
+    app.add_flag("--bufread", bufRead, "Use buffered read");
+
+    if (argc <= 1) {
+        std::print("{}", app.help());
+        return 0;
     }
 
-    auto input = std::string_view{ argv[1] };
-    if (input == "int") {
-        bench<int>();
-    } else if (input == "float") {
-        bench<float>();
-    } else {
-        std::println("Usage: {} <int|float>", argv[0]);
-        return 1;
+    CLI11_PARSE(app, argc, argv);
+
+    switch (type) {
+    case Bench::Int:
+        if (useCin) {
+            auto reader = CinReader{};
+            bench<int>(reader);
+        } else if (bufRead) {
+            auto reader = cppread::BufReader{ 1024 };
+            bench<int>(reader);
+        } else {
+            auto reader = DefReader{};
+            bench<int>(reader);
+        }
+        break;
+    case Bench::Float:
+        if (useCin) {
+            auto reader = CinReader{};
+            bench<float>(reader);
+        } else if (bufRead) {
+            auto reader = cppread::BufReader{ 1024 };
+            bench<float>(reader);
+        } else {
+            auto reader = DefReader{};
+            bench<float>(reader);
+        }
+        break;
+    case Bench::Control:
+        /* do nothing */
+        break;
     }
 }

@@ -7,30 +7,22 @@ set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
+find_package(fmt REQUIRED)
+find_package(CLI11 REQUIRED)
+
 add_subdirectory(lib/cppread)
 
-# ~~~
-# main
-# ~~~
-add_executable(main source/main.cpp)
-target_include_directories(main PRIVATE source)
-target_link_libraries(main PRIVATE cppread)
-target_compile_options(main PRIVATE -Wall -Wextra -Wconversion)
+function(create_exe name)
+  add_executable(${name} source/${name}.cpp)
+  target_include_directories(${name} PRIVATE source)
+  target_link_libraries(${name} PRIVATE cppread fmt::fmt CLI11::CLI11)
+  target_compile_options(${name} PRIVATE -Wall -Wextra -Wconversion)
 
-# sanitizer
-target_compile_options(main PRIVATE -fsanitize=address,leak,undefined)
-target_link_options(main PRIVATE -fsanitize=address,leak,undefined)
+  # # sanitizer
+  # target_compile_options(${name} PRIVATE -fsanitize=address,leak,undefined)
+  # target_link_options(${name} PRIVATE -fsanitize=address,leak,undefined)
+endfunction()
 
-# ~~~
-# bench
-# ~~~
-add_executable(bench source/bench.cpp)
-target_include_directories(bench PRIVATE source)
-target_link_libraries(bench PRIVATE cppread)
-target_compile_options(bench PRIVATE -Wall -Wextra -Wconversion)
-
-add_executable(bench_cin source/bench.cpp)
-target_include_directories(bench_cin PRIVATE source)
-target_link_libraries(bench_cin PRIVATE cppread)
-target_compile_options(bench_cin PRIVATE -Wall -Wextra -Wconversion)
-target_compile_definitions(bench_cin PRIVATE USE_CIN)
+create_exe(main)
+create_exe(bench)
+create_exe(bufread)
