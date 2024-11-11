@@ -5,6 +5,7 @@
 
 #include <concepts>
 #include <memory>
+#include <vector>
 
 namespace cppread::detail
 {
@@ -61,39 +62,49 @@ namespace cppread::detail
     static_assert(LineReader<GetlineReader>);
 #endif
 
-    struct FgetcReader
+    struct FgetsReader
     {
         struct Line
         {
-            Str view() const noexcept { return m_data; }
-
-            std::string m_data;
+            using Data = std::vector<char>;
+            Str  view() const noexcept { return { m_data.data(), m_data.size() }; }
+            Data m_data;
         };
 
         Opt<Line> readline() const noexcept
         {
-            auto line = Line{};
-            line.m_data.reserve(256);    // little optimization
+            auto        line   = Line::Data(256, '\0');
+            std::size_t offset = 0;
+            bool        first  = true;
 
-            auto ch = std::fgetc(stdin);
-            while (ch != '\n' and ch != EOF) {
-                line.m_data.push_back(static_cast<char>(ch));
-                ch = std::fgetc(stdin);
+            while (true) {
+                auto res = std::fgets(line.data() + offset, static_cast<int>(line.size() - offset), stdin);
+                if (res == nullptr and first) {
+                    return {};
+                }
+
+                first = false;
+
+                // fgets encountered newline or EOF
+                if (auto last = line[line.size() - 2]; last == '\0' or last == '\n') {
+                    break;
+                }
+
+                // fgets reached the limit of the buffer; double the size
+                offset = line.size() - 1;
+                line.resize(line.size() * 2, '\0');
             }
 
-            if (std::feof(stdin)) {
-                return {};
-            }
             return Opt<Line>{ std::move(line) };
         }
     };
 
-    static_assert(LineReader<FgetcReader>);
+    static_assert(LineReader<FgetsReader>);
 
 #if defined(__GLIBC__) and defined(CPPREAD_ENABLE_GETLINE)
     using NoBufReader = GetlineReader;
 #else
-    using NoBufReader = FgetcReader;
+    using NoBufReader = FgetsReader;
 #endif
 }
 
