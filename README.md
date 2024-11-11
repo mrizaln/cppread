@@ -194,6 +194,17 @@ Why would I want this?
 - It is easier to parse in my head when the input validation is done directly in the prompt.
 - The resulting value can be `const`
 
-### Documentation
+## Documentation
 
 This library is a simple library (about 350 LOC, measured using `cloc`), so a dedicated documentation is not necessary. You can read the headers directly to see the documentation (Doxygen).
+
+## Benchmark
+
+Benchmark performed on Intel(R) Core(TM) i5-10500H (12 threads) with the frequency locked at 2.5GHz, using `hyperfine` with parameters `--warmup 3`. The benchmark involves parsing about 625k lines of 4 `(float | int)` separated by space (generated using [this script](example/random_gen.sh); `nan` removed). The benchmark code is [here](example/source/bench.cpp).
+
+|                   | `std::cin`           | `cppread` (`getline`) | `cppread` (`getch`)   |
+| ----------------- | -------------------- | --------------------- | --------------------- |
+| `615217 4-floats` | `2.280 s ±  0.012 s` | `252.6 ms ±   3.2 ms` | `449.8 ms ±   7.0 ms` |
+| `625000 4-ints`   | `1.141 s ±  0.015 s` | `164.6 ms ±   1.3 ms` | `306.8 ms ±  10.0 ms` |
+
+As you can see, this library is generally up to 9x faster than `std::cin`. Now, that is not impressive, since the fact is that `std::cin` is just that slow.
