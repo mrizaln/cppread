@@ -6,7 +6,6 @@
 #include "cppread/detail/read.hpp"
 
 #include <algorithm>
-#include <vector>
 
 namespace cppread
 {
@@ -20,7 +19,7 @@ namespace cppread
         };
 
         BufReader(std::size_t size) noexcept
-            : m_buf(size, '\0')
+            : m_reader{ size }
         {
         }
 
@@ -34,7 +33,7 @@ namespace cppread
             requires(sizeof...(Ts) > 1)
         Results<Ts...> read(Opt<Str> prompt = std::nullopt, char delim = ' ') noexcept
         {
-            return detail::read_impl<Ts...>(*this, prompt, delim);
+            return detail::read_impl<Ts...>(m_reader, prompt, delim);
         }
 
         /**
@@ -46,7 +45,7 @@ namespace cppread
         template <Parseable T>
         Result<T> read(Opt<Str> prompt = std::nullopt, char delim = ' ') noexcept
         {
-            auto result = detail::read_impl<T>(*this, prompt, delim);
+            auto result = detail::read_impl<T>(m_reader, prompt, delim);
             if (result) {
                 return std::get<0>(std::move(result).value());
             }
@@ -60,48 +59,16 @@ namespace cppread
          */
         Result<std::string> read(Opt<Str> prompt = std::nullopt) noexcept
         {
-            auto result = detail::read_impl<std::string>(*this, prompt, '\n');
+            auto result = detail::read_impl<std::string>(m_reader, prompt, '\n');
             if (result) {
                 return std::get<0>(std::move(result).value());
             }
             return result.error();
         }
 
-        /**
-         * @brief Read a line from stdin.
-         */
-        Opt<Line> readline() noexcept
-        {
-            std::ranges::fill(m_buf, '\0');
-
-            std::size_t offset = 0;
-            bool        first  = true;
-            while (true) {
-                auto res = std::fgets(m_buf.data() + offset, static_cast<int>(m_buf.size() - offset), stdin);
-                if (res == nullptr and first) {
-                    return {};
-                }
-
-                first = false;
-
-                // fgets encountered newline or EOF
-                if (auto last = m_buf[m_buf.size() - 2]; last == '\0' or last == '\n') {
-                    break;
-                }
-
-                // fgets reached the limit of the buffer; double the size
-                offset = m_buf.size() - 1;
-                m_buf.resize(m_buf.size() * 2, '\0');
-            }
-
-            return Opt<Line>{ Str{ m_buf.data(), m_buf.size() } };
-        }
-
     private:
-        std::vector<char> m_buf;
+        detail::BufReader m_reader;
     };
-
-    static_assert(detail::LineReader<BufReader>);
 }
 
 #endif /* end of include guard: CPPREAD_BUF_READER_HPP */

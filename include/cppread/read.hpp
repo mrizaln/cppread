@@ -15,7 +15,7 @@ namespace cppread
         requires(sizeof...(Ts) > 1)
     Results<Ts...> read(Opt<Str> prompt = std::nullopt, char delim = ' ') noexcept
     {
-        auto reader = detail::NoBufReader{};
+        auto reader = detail::Reader{};
         return detail::read_impl<Ts...>(reader, prompt, delim);
     }
 
@@ -28,7 +28,7 @@ namespace cppread
     template <Parseable T>
     Result<T> read(Opt<Str> prompt = std::nullopt, char delim = ' ') noexcept
     {
-        auto reader = detail::NoBufReader{};
+        auto reader = detail::Reader{};
         auto result = detail::read_impl<T>(reader, prompt, delim);
         if (result) {
             return std::get<0>(std::move(result).value());
@@ -43,7 +43,7 @@ namespace cppread
      */
     inline Result<std::string> read(Opt<Str> prompt = std::nullopt) noexcept
     {
-        auto reader = detail::NoBufReader{};
+        auto reader = detail::Reader{};
         auto result = detail::read_impl<std::string>(reader, prompt, '\n');
         if (result) {
             return std::get<0>(std::move(result).value());
