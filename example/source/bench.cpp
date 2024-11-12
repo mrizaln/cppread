@@ -2,6 +2,8 @@
 #include <cppread/buf_read.hpp>
 
 #include <CLI/CLI.hpp>
+#include <fmt/core.h>
+#include <fmt/ranges.h>
 
 #include <chrono>
 #include <iostream>
@@ -47,6 +49,21 @@ struct CinReader
     }
 };
 
+struct EmptyReader
+{
+    std::size_t m_count = 0;
+
+    template <typename... Ts>
+    cppread::Results<Ts...> read()
+    {
+        if (++m_count > 10000) {
+            m_count = 0;
+            return cppread::Error::EndOfFile;
+        }
+        return { cppread::Tup<Ts...>{ Ts{}... } };
+    }
+};
+
 const std::map<std::string, Bench> TYPE_STR{
     { "int", Bench::Int },
     { "float", Bench::Float },
@@ -54,7 +71,7 @@ const std::map<std::string, Bench> TYPE_STR{
 };
 
 template <typename T>
-void bench(auto& reader)
+void bench(auto& reader, bool print)
 {
     namespace chr = std::chrono;
     using Clock   = chr::steady_clock;
@@ -64,12 +81,16 @@ void bench(auto& reader)
     auto values = std::vector<Value>{};
     auto count  = 0uz;
 
+    values.reserve(1'000'000);
     while (true) {
         auto result = reader.template read<T, T, T, T>();
         if (not result) {
             break;
         } else {
             values.push_back(std::move(result).value());
+            if (print) {
+                fmt::println("value: {}", values.back());
+            }
             ++count;
         }
     }
@@ -86,15 +107,17 @@ int main(int argc, char** argv)
 {
     auto app = CLI::App{ "cppread bench" };
 
-    Bench type    = Bench::Float;
-    bool  useCin  = false;
-    bool  bufRead = false;
+    auto type    = Bench::Float;
+    auto useCin  = false;
+    auto bufRead = false;
+    auto verbose = false;
 
     app.add_option("type", type, "The type to bench")
         ->required()
         ->transform(CLI::CheckedTransformer(TYPE_STR, CLI::ignore_case));
     app.add_flag("--cin", useCin, "Use cin instead");
-    app.add_flag("--bufread", bufRead, "Use buffered read");
+    app.add_flag("--buf", bufRead, "Use buffered read");
+    app.add_flag("--verbose", verbose, "Print output");
 
     if (argc <= 1) {
         std::print("{}", app.help());
@@ -107,29 +130,30 @@ int main(int argc, char** argv)
     case Bench::Int:
         if (useCin) {
             auto reader = CinReader{};
-            bench<int>(reader);
+            bench<int>(reader, verbose);
         } else if (bufRead) {
             auto reader = cppread::BufReader{ 1024 };
-            bench<int>(reader);
+            bench<int>(reader, verbose);
         } else {
             auto reader = DefReader{};
-            bench<int>(reader);
+            bench<int>(reader, verbose);
         }
         break;
     case Bench::Float:
         if (useCin) {
             auto reader = CinReader{};
-            bench<float>(reader);
+            bench<float>(reader, verbose);
         } else if (bufRead) {
             auto reader = cppread::BufReader{ 1024 };
-            bench<float>(reader);
+            bench<float>(reader, verbose);
         } else {
             auto reader = DefReader{};
-            bench<float>(reader);
+            bench<float>(reader, verbose);
         }
         break;
-    case Bench::Control:
-        /* do nothing */
-        break;
+    case Bench::Control: {
+        auto reader = EmptyReader{};
+        bench<float>(reader, verbose);
+    } break;
     }
 }

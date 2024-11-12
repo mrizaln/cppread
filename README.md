@@ -169,25 +169,27 @@ This library is a simple library (about 350 LOC, measured using `cloc`), so a de
 > - The benchmark involves parsing about 625k lines of 4 `(float | int)` separated by space (generated using [this script](example/random_gen.sh); `nan` removed).
 > - The benchmark code is [here](example/source/bench.cpp).
 
-|                            | `615217 4-floats`     | `625000 4-ints`     |
-| -------------------------- | --------------------- | ------------------- |
-| `std::cin` (unsynced)      | `1.169  s ± 0.004  s` | `310.8 ms ± 3.2 ms` |
-| `cppread::read` (getline)  | `274.0 ms ± 2.3   ms` | `173.2 ms ± 0.6 ms` |
-| `cppread::read` (fgets)    | `297.5 ms ± 2.5   ms` | `195.4 ms ± 4.0 ms` |
-| `cppread::BufReader::read` | `284.2 ms ± 5.7   ms` | `173.0 ms ± 2.0 ms` |
+|                                      | `615217 4-floats`     | `625000 4-ints`     |
+| ------------------------------------ | --------------------- | ------------------- |
+| `std::cin` (unsynced)                | `1.155  s ± 0.003  s` | `298.6 ms ± 2.8 ms` |
+| `cppread::read` (getline)            | `261.3 ms ± 1.8   ms` | `163.7 ms ± 1.7 ms` |
+| `cppread::read` (fgets)              | `287.0 ms ± 1.5   ms` | `183.9 ms ± 1.3 ms` |
+| `cppread::BufReader::read` (getline) | `253.4 ms ± 1.8   ms` | `145.7 ms ± 1.1 ms` |
+| `cppread::BufReader::read` (fgets)   | `270.8 ms ± 2.2   ms` | `160.7 ms ± 1.1 ms` |
 
-As you can see, this library is generally faster than `std::cin` (unsynced) and can gain up to 4x speedup.
+As you can see, this library is generally faster than `std::cin` (unsynced) and can gain up to 4.4x speedup.
 
 ### allocation
 
 > - Measured using `memusage`.
 > - Allocations not done by the library is deducted from the total number.
 
-|                            | calls to malloc/new |
-| -------------------------- | ------------------: |
-| `std::cin` (unsynced)      |           `2460901` |
-| `cppread::read` (getline)  |            `615242` |
-| `cppread::read` (fgets)    |            `615242` |
-| `cppread::BufReader::read` |                `30` |
+|                                      | calls to malloc/new |
+| ------------------------------------ | ------------------: |
+| `std::cin` (unsynced)                |           `2460901` |
+| `cppread::read` (getline)            |            `615219` |
+| `cppread::read` (fgets)              |            `615219` |
+| `cppread::BufReader::read` (getline) |                 `7` |
+| `cppread::BufReader::read` (fgets)   |                 `7` |
 
 Since `cppread::BufReader` retains its buffer for its lifetime (and it grows as needed), allocation only happen few times at the start. This can help reduce memory fragmentation.
