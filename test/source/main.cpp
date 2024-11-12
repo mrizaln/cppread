@@ -1,3 +1,5 @@
+// #undef CPPREAD_ENABLE_GETLINE    // uncomment this to use fgets instead of getline
+
 #include <cppread/read.hpp>
 
 #include <fmt/core.h>
@@ -23,8 +25,8 @@ struct cppread::Parser<Idk>
         }
 
         return Idk{
-            .m_int   = cppread::parse<int>(split->at(0)).value(),
-            .m_float = cppread::parse<float>(split->at(1)).value(),
+            .m_int   = cppread::parse<int>(split->at(0)).value_or(0),
+            .m_float = cppread::parse<float>(split->at(1)).value_or(0.0),
         };
     }
 };
