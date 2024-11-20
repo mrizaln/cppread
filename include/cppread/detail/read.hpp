@@ -25,7 +25,7 @@ namespace cppread::detail
             return Error::EndOfFile;
         }
 
-        auto parts = util::split<sizeof...(Ts)>(line->view(), delim);
+        auto parts = ::cppread::util::split<sizeof...(Ts)>(line->view(), delim);
         if (parts) {
             return parseIntoTuple<Ts...>(*parts);
         }

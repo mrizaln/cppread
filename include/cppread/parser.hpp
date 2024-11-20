@@ -3,101 +3,47 @@
 
 #include "cppread/common.hpp"
 #include "cppread/util.hpp"
+#include "cppread/detail/default_parser.hpp"
 
-#include <array>
-#include <cctype>
-#include <charconv>
 #include <span>
-#include <string>
 
 namespace cppread
 {
-    template <typename>
-    struct Parser
-    {
-        static_assert(false, "No Parser specialization for the type");
-    };
-
-    // specialization for char
-    template <>
-    struct Parser<char>
-    {
-        Result<char> parse(Str str) const noexcept { return str[0]; }
-    };
-
-    // specialization for boolean
-    template <>
-    struct Parser<bool>
-    {
-        Result<bool> parse(Str str) const noexcept
-        {
-            using Buf = std::array<char, 6>;
-
-            constexpr auto litFalse = Buf{ "false" };
-            constexpr auto litTrue  = Buf{ "true" };
-
-            auto buf = Buf{};
-
-            auto size = std::min(str.size(), buf.size());
-            for (std::size_t i = 0; i < size; ++i) {
-                buf[i] = static_cast<char>(std::tolower(str[i]));
-            }
-
-            if (buf[0] == '0') {
-                return false;
-            } else if (buf[0] == '1') {
-                return true;
-            }
-
-            if (buf == litFalse) {
-                return false;
-            } else if (buf == litTrue) {
-                return true;
-            }
-
-            return Error::InvalidInput;
-        }
-    };
-
-    // specialization for fundamental types
-    template <Fundamental T>
-    struct Parser<T>
-    {
-        Result<T> parse(Str str) const noexcept
-        {
-            T value;
-            auto [ptr, ec] = std::from_chars(str.begin(), str.end(), value);
-
-            if (ec == std::errc::invalid_argument) {
-                return Error::InvalidInput;
-            } else if (ec == std::errc::result_out_of_range) {
-                return Error::OutOfRange;
-            }
-
-            return value;
-        }
-    };
-
-    // specialization for std::string
-    template <>
-    struct Parser<std::string>
-    {
-        Result<std::string> parse(Str str) const noexcept { return std::string{ str.begin(), str.size() }; }
-    };
+    /**
+     * @brief Customization point for parsing custom (user) types.
+     *
+     * @tparam T Type to be parsed
+     *
+     * User can create a parser for a type by specializing this struct. The shape of the struct should match
+     * the `CustomParseable` concept.
+     */
+    template <typename T>
+    struct CustomParser;
 
     template <typename T>
-    concept Parseable = requires(const Parser<T> p, Str str) {
+    concept CustomParseable = requires(const CustomParser<T> p, Str str) {
         { p.parse(str) } noexcept -> std::same_as<Result<T>>;
     };
 
+    template <typename T>
+    concept DefaultParseable = requires(const detail::DefaultParser<T> p, Str str) {
+        { p.parse(str) } noexcept -> std::same_as<Result<T>>;
+    };
+
+    template <typename T>
+    concept Parseable = DefaultParseable<T> or CustomParseable<T>;
+
     /**
-     * @brief Helper function that calls the specialized `Parser` member function, since writing
-     *        `cppread::Parser<T>{}.parse(str)` will get old really quickly.
+     * @brief Helper function that calls the specialized `Parser` member function.
      */
     template <Parseable T>
     Result<T> parse(Str str) noexcept
     {
-        return Parser<T>{}.parse(str);
+        if constexpr (CustomParseable<T>) {
+            return CustomParser<T>{}.parse(str);
+        } else {
+            return detail::DefaultParser<T>{}.parse(str);
+        }
     }
 
     /**

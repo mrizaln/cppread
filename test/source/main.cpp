@@ -15,7 +15,7 @@ struct Idk
 };
 
 template <>
-struct cppread::Parser<Idk>
+struct cppread::CustomParser<Idk>
 {
     Result<Idk> parse(Str str) const noexcept
     {
