@@ -12,7 +12,7 @@ Using `std::cin` is just generally annoying and painful. Furthermore the error h
 int main() {
     // C++ standard library gives us this:
     {
-        int value;                  // default initialized, uhh... not good
+        int value;                  // garbage value, uhh... not good
         std::cout << "prompt: ";
         std::cin >> value;
 
@@ -20,7 +20,7 @@ int main() {
 
             // handle extraction failure...
 
-            // I might have forgot to do these two necessary steps!!
+            // these are necessary steps, and I might have forgot to do these!
             std::cin.clear();
             std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
 
@@ -50,8 +50,11 @@ This library is intended to be used in my personal projects if I ever have the n
 - Line based input: each read consume an entire line of the `stdin` (using `getline` on linux (glibc) else `fgets`; define/undef `CPPREAD_ENABLE_GETLINE` to override).
 - Improved error handling: using custom type that wraps a variant: `cppread::Result<T>`.
 - Exception-free: no exception thrown from `cppread::read` functions.
-- No buffering: each read done from `stdin` raw (performance might be bad because of that though).
+- Buffered or non-buffered read, it's your choice.
 - `const` compatible: you can assign the result of `cppread::read` to a `const` variable easily.
+- Built-in parser for fundamental types (using `std::from_chars`; `bool` has separate implementation) (see the implementation [here](./include/cppread/detail/default_parser.hpp)).
+- Allow overriding default parser via `cppread::CustomParser` specialization.
+- Allow extension for custom type via specialization of `cppread::CustomParser`.
 
 ## Example
 
@@ -156,9 +159,69 @@ int main() {
 }
 ```
 
+### Custom type parser
+
+You can parse your own type by specializing `cppread::CustomParser` struct. The shape of the struct must conform to `cppread::CustomParseable` concept.
+
+```cpp
+#include <cppread/read.hpp>
+#include <cppread/parser.hpp>    // cppread::CustomParser, cppread::CustomParseable, cppread::Parseable
+
+struct Color
+{
+    float m_r;
+    float m_g;
+    float m_b;
+};
+
+template <>
+struct cppread::CustomParser<Color>
+{
+    Result<Color> parse(Str str) const noexcept
+    {
+        // parse string with the shape: `Color { <r> <g> <b> }`
+        //                               0     1 2   3   4   5
+
+        // use cppread's split (repeated delimiter counted as one)
+        auto parts = cppread::util::split<6>(str, ' ');
+        if (not parts) {
+            return Error::InvalidInput;
+        }
+
+        if (parts->at(0) != "Color" || parts->at(1) != "{" || parts->at(5) != "}") {
+            return Error::InvalidInput;
+        }
+
+        // parse the underlying type using default parser
+        auto r = cppread::parse<float>(parts->at(2));
+        auto g = cppread::parse<float>(parts->at(3));
+        auto b = cppread::parse<float>(parts->at(4));
+
+        if (not r || not g || not b) {
+            return Error::InvalidInput;
+        }
+
+        return Color{ r.value(), g.value(), b.value() };
+    }
+};
+
+static_assert(cppread::CustomParseable<Color>);
+static_assert(cppread::Parseable<Color>);
+
+int main() {
+    // the delimiter set to '\n' since the Color parser reads a substring that contains space,
+    // effectively read the entire line
+    auto result = cppread::read<Color>("input color: ", '\n');
+
+    // use the result ...
+}
+```
+
+> See this [example](./example/source/custom_type.cpp) for overriding default parser
+
 ## Documentation
 
-This library is a simple library (about 350 LOC, measured using `cloc`), so a dedicated documentation is not necessary. You can read the headers directly to see the documentation (Doxygen).
+This library is a simple library (about 500 LOC, measured using `cloc`), so a dedicated documentation is not necessary. You can read the headers directly to see the documentation (Doxygen format).
 
 ## Benchmark
 
