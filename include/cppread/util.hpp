@@ -3,6 +3,7 @@
 
 #include "cppread/common.hpp"
 
+#include <algorithm>
 #include <array>
 #include <utility>
 
@@ -19,34 +20,31 @@ namespace cppread::util
     constexpr Opt<std::array<Str, N>> split(Str str, char delim) noexcept
     {
         std::array<Str, N> res = {};
-        std::size_t        i   = 0;
-        std::size_t        j   = 0;
 
-        // in case the delimiter is at the beginning of the string
-        while (str[j] == delim) {
-            j++;
+        std::size_t i = 0;
+        std::size_t j = 0;
 
-            if (j == str.size()) {
-                return std::nullopt;
-            }
-        }
+        auto find_delim_or_null = [&](std::size_t start) {
+            auto iter = std::find_if(str.begin() + start, str.end(), [&](char chr) {
+                return chr == delim or chr == '\0';
+            });
+            return iter == str.end() ? Str::npos : static_cast<std::size_t>(iter - str.begin());
+        };
 
         while (i < N and j < str.size() and str[j] != '\0' and str[j] != '\n') {
-            std::size_t pos = str.find(delim, j);
-
-            // in case multiple delimiters are together
-            while (pos == j) {
-                j++;
-
-                if (j == str.size()) {
-                    return std::nullopt;
-                }
-
-                pos = str.find(delim, j);
+            while (j != str.size() and str[j] == delim) {
+                ++j;
             }
+
+            auto pos = find_delim_or_null(j);
 
             if (pos == Str::npos) {
                 res[i++] = str.substr(j);
+                break;
+            }
+
+            if (str[pos] == '\0' or str[pos] == '\n') {
+                res[i++] = str.substr(j, pos - j);
                 break;
             }
 
