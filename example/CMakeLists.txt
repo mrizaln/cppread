@@ -18,9 +18,9 @@ function(create_exe name)
   target_link_libraries(${name} PRIVATE cppread fmt::fmt CLI11::CLI11)
   target_compile_options(${name} PRIVATE -Wall -Wextra -Wconversion)
 
-  # sanitizer
-  target_compile_options(${name} PRIVATE -fsanitize=address,leak,undefined)
-  target_link_options(${name} PRIVATE -fsanitize=address,leak,undefined)
+  # # sanitizer
+  # target_compile_options(${name} PRIVATE -fsanitize=address,leak,undefined)
+  # target_link_options(${name} PRIVATE -fsanitize=address,leak,undefined)
 endfunction()
 
 create_exe(main)
