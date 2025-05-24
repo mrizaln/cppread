@@ -1,7 +1,7 @@
-#ifndef CPPREAD_READER_HPP
-#define CPPREAD_READER_HPP
+#ifndef LINR_READER_HPP
+#define LINR_READER_HPP
 
-#include "cppread/common.hpp"
+#include "linr/common.hpp"
 
 #include <concepts>
 #include <memory>
@@ -9,7 +9,7 @@
 #include <vector>
 #include <cstdio>
 
-namespace cppread::detail
+namespace linr::detail
 {
     template <typename L>
     concept Line = requires(const L l) {
@@ -24,7 +24,7 @@ namespace cppread::detail
         { r.readline() } noexcept -> std::same_as<Opt<typename R::Line>>;
     };
 
-#if defined(__GLIBC__) and defined(CPPREAD_ENABLE_GETLINE)
+#if defined(__GLIBC__) and defined(LINR_ENABLE_GETLINE)
     struct GetlineReader
     {
         struct Line
@@ -227,7 +227,7 @@ namespace cppread::detail
     };
     static_assert(LineReader<BufFgetsReader>);
 
-#if defined(__GLIBC__) and defined(CPPREAD_ENABLE_GETLINE)
+#if defined(__GLIBC__) and defined(LINR_ENABLE_GETLINE)
     using Reader    = GetlineReader;
     using BufReader = BufGetlineReader;
 #else
@@ -236,4 +236,4 @@ namespace cppread::detail
 #endif
 }
 
-#endif /* end of include guard: CPPREAD_READER_HPP */
+#endif /* end of include guard: LINR_READER_HPP */

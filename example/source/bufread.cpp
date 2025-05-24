@@ -1,10 +1,10 @@
-#include "cppread/buf_read.hpp"
+#include "linr/buf_read.hpp"
 
 #include <fmt/core.h>
 #include <fmt/ranges.h>
 
 template <typename... Ts>
-auto readRepeat(cppread::BufReader& reader, std::string_view prompt, std::string_view fail)
+auto readRepeat(linr::BufReader& reader, std::string_view prompt, std::string_view fail)
 {
     while (true) {
         auto result = reader.read<Ts...>(prompt);
@@ -13,7 +13,7 @@ auto readRepeat(cppread::BufReader& reader, std::string_view prompt, std::string
             return;
         }
 
-        if (result.error() == cppread::Error::EndOfFile) {
+        if (result.error() == linr::Error::EndOfFile) {
             fmt::println("stdin EOF reached!");
             return;
         }
@@ -23,7 +23,7 @@ auto readRepeat(cppread::BufReader& reader, std::string_view prompt, std::string
 
 int main()
 {
-    auto reader = cppread::BufReader(10);
+    auto reader = linr::BufReader(10);
     readRepeat<int>(reader, "input 1 int: ", "Please input an integer");
     readRepeat<int, int>(reader, "input 2 int: ", "Please input an integer");
     readRepeat<int, int, int>(reader, "input 3 int: ", "Please input an integer");

@@ -1,5 +1,5 @@
-#include <cppread/read.hpp>
-#include <cppread/buf_read.hpp>
+#include <linr/read.hpp>
+#include <linr/buf_read.hpp>
 
 #include <CLI/CLI.hpp>
 #include <fmt/core.h>
@@ -24,14 +24,14 @@ struct DefReader
     template <typename... Ts>
     auto read()
     {
-        return cppread::read<Ts...>();
+        return linr::read<Ts...>();
     }
 };
 
 struct CinReader
 {
     template <typename... Ts>
-    cppread::Results<Ts...> read()
+    linr::Results<Ts...> read()
     {
         std::ios_base::sync_with_stdio(false);
 
@@ -42,7 +42,7 @@ struct CinReader
         handler(std::index_sequence_for<Ts...>{});
 
         if (std::cin.fail()) {
-            return cppread::Error::InvalidInput;
+            return linr::Error::InvalidInput;
         } else {
             return { std::move(values) };
         }
@@ -54,13 +54,13 @@ struct EmptyReader
     std::size_t m_count = 0;
 
     template <typename... Ts>
-    cppread::Results<Ts...> read()
+    linr::Results<Ts...> read()
     {
         if (++m_count > 10000) {
             m_count = 0;
-            return cppread::Error::EndOfFile;
+            return linr::Error::EndOfFile;
         }
-        return { cppread::Tup<Ts...>{ Ts{}... } };
+        return { linr::Tup<Ts...>{ Ts{}... } };
     }
 };
 
@@ -105,7 +105,7 @@ void bench(auto& reader, bool print)
 
 int main(int argc, char** argv)
 {
-    auto app = CLI::App{ "cppread bench" };
+    auto app = CLI::App{ "linr bench" };
 
     auto type    = Bench::Float;
     auto useCin  = false;
@@ -132,7 +132,7 @@ int main(int argc, char** argv)
             auto reader = CinReader{};
             bench<int>(reader, verbose);
         } else if (bufRead) {
-            auto reader = cppread::BufReader{ 1024 };
+            auto reader = linr::BufReader{ 1024 };
             bench<int>(reader, verbose);
         } else {
             auto reader = DefReader{};
@@ -144,7 +144,7 @@ int main(int argc, char** argv)
             auto reader = CinReader{};
             bench<float>(reader, verbose);
         } else if (bufRead) {
-            auto reader = cppread::BufReader{ 1024 };
+            auto reader = linr::BufReader{ 1024 };
             bench<float>(reader, verbose);
         } else {
             auto reader = DefReader{};

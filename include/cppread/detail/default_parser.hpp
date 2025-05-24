@@ -1,14 +1,14 @@
-#ifndef CPPREAD_DETAIL_DEFAULT_PARSER_HPP
-#define CPPREAD_DETAIL_DEFAULT_PARSER_HPP
+#ifndef LINR_DETAIL_DEFAULT_PARSER_HPP
+#define LINR_DETAIL_DEFAULT_PARSER_HPP
 
-#include "cppread/common.hpp"
+#include "linr/common.hpp"
 
 #include <array>
 #include <cctype>
 #include <charconv>
 #include <string>
 
-namespace cppread::detail
+namespace linr::detail
 {
     template <typename>
     struct DefaultParser;
@@ -81,4 +81,4 @@ namespace cppread::detail
     };
 }
 
-#endif /* end of include guard: CPPREAD_DETAIL_DEFAULT_PARSER_HPP */
+#endif /* end of include guard: LINR_DETAIL_DEFAULT_PARSER_HPP */

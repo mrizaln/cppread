@@ -1,13 +1,13 @@
-#ifndef CPPREAD_PARSER_HPP
-#define CPPREAD_PARSER_HPP
+#ifndef LINR_PARSER_HPP
+#define LINR_PARSER_HPP
 
-#include "cppread/common.hpp"
-#include "cppread/util.hpp"
-#include "cppread/detail/default_parser.hpp"
+#include "linr/common.hpp"
+#include "linr/util.hpp"
+#include "linr/detail/default_parser.hpp"
 
 #include <span>
 
-namespace cppread
+namespace linr
 {
     /**
      * @brief Customization point for parsing custom (user) types.
@@ -83,4 +83,4 @@ namespace cppread
     }
 }
 
-#endif /* end of include guard: CPPREAD_PARSER_HPP */
+#endif /* end of include guard: LINR_PARSER_HPP */

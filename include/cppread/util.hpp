@@ -1,13 +1,13 @@
-#ifndef CPPREAD_UTIL_HPP
-#define CPPREAD_UTIL_HPP
+#ifndef LINR_UTIL_HPP
+#define LINR_UTIL_HPP
 
-#include "cppread/common.hpp"
+#include "linr/common.hpp"
 
 #include <algorithm>
 #include <array>
 #include <utility>
 
-namespace cppread::util
+namespace linr::util
 {
     /**
      * @brief Split a string into an array of strings using a delimiter.
@@ -82,4 +82,4 @@ namespace cppread::util
     }
 }
 
-#endif /* end of include guard: CPPREAD_UTIL_HPP */
+#endif /* end of include guard: LINR_UTIL_HPP */

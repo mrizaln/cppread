@@ -1,9 +1,9 @@
-#ifndef CPPREAD_READ_HPP
-#define CPPREAD_READ_HPP
+#ifndef LINR_READ_HPP
+#define LINR_READ_HPP
 
-#include "cppread/detail/read.hpp"
+#include "linr/detail/read.hpp"
 
-namespace cppread
+namespace linr
 {
     /**
      * @brief Read multiple values from stdin.
@@ -52,4 +52,4 @@ namespace cppread
     }
 }
 
-#endif /* end of include guard: CPPREAD_READ_HPP */
+#endif /* end of include guard: LINR_READ_HPP */

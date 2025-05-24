@@ -1,5 +1,5 @@
-#ifndef CPPREAD_COMMON_HPP
-#define CPPREAD_COMMON_HPP
+#ifndef LINR_COMMON_HPP
+#define LINR_COMMON_HPP
 
 #include <optional>
 #include <string_view>
@@ -7,7 +7,7 @@
 #include <utility>
 #include <variant>
 
-namespace cppread
+namespace linr
 {
     template <typename T>
     concept Fundamental = std::is_fundamental_v<T>;
@@ -90,7 +90,7 @@ namespace cppread
     using Results = Result<Tup<Ts...>>;
 
     /**
-     * @brief Decides whether `Fn` is a suitable callable object for `cppread::readRepeat` callback
+     * @brief Decides whether `Fn` is a suitable callable object for `linr::readRepeat` callback
      *
      * @tparam Fn The callable object
      * @tparam T The parsed object if it's successful
@@ -102,4 +102,4 @@ namespace cppread
     };
 }
 
-#endif /* end of include guard: CPPREAD_COMMON_HPP */
+#endif /* end of include guard: LINR_COMMON_HPP */

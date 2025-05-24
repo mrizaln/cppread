@@ -1,5 +1,5 @@
-#include <cppread/read.hpp>
-#include <cppread/parser.hpp>    // cppread::CustomParser and cppread::CustomParseable
+#include <linr/read.hpp>
+#include <linr/parser.hpp>    // linr::CustomParser and linr::CustomParseable
 
 #include <fmt/core.h>
 
@@ -12,13 +12,13 @@ struct Color
 
 // custom type
 template <>
-struct cppread::CustomParser<Color>
+struct linr::CustomParser<Color>
 {
     Result<Color> parse(Str str) const noexcept
     {
         // parse string with the shape: `Color { <r> <g> <b> }`
         //                               0     1 2   3   4   5
-        auto parts = cppread::util::split<6>(str, ' ');
+        auto parts = linr::util::split<6>(str, ' ');
         if (not parts) {
             return Error::InvalidInput;
         }
@@ -27,9 +27,9 @@ struct cppread::CustomParser<Color>
             return Error::InvalidInput;
         }
 
-        auto r = cppread::parse<float>(parts->at(2));
-        auto g = cppread::parse<float>(parts->at(3));
-        auto b = cppread::parse<float>(parts->at(4));
+        auto r = linr::parse<float>(parts->at(2));
+        auto g = linr::parse<float>(parts->at(3));
+        auto b = linr::parse<float>(parts->at(4));
 
         if (not r || not g || not b) {
             return Error::InvalidInput;
@@ -39,12 +39,12 @@ struct cppread::CustomParser<Color>
     }
 };
 
-static_assert(cppread::CustomParseable<Color>);
-static_assert(cppread::Parseable<Color>);
+static_assert(linr::CustomParseable<Color>);
+static_assert(linr::Parseable<Color>);
 
 // override default parser
 template <>
-struct cppread::CustomParser<int>
+struct linr::CustomParser<int>
 {
     Result<int> parse(Str str) const noexcept
     {
@@ -61,10 +61,10 @@ int main()
     auto get_color = [] {
         while (true) {
             // the delimiter set to '\n' since the Color parser reads a substring that contains space
-            auto result = cppread::read<Color>("input color: ", '\n');
+            auto result = linr::read<Color>("input color: ", '\n');
 
             if (not result) {
-                using Err = cppread::Error;
+                using Err = linr::Error;
                 if (auto err = result.error(); err == Err::EndOfFile or err == Err::Unknown) {
                     fmt::println("\nstdin got into unrecoverable state");
                     std::exit(1);
@@ -81,6 +81,6 @@ int main()
     auto color = get_color();
     fmt::println("color {} | {} | {}", color.m_r, color.m_g, color.m_b);
 
-    auto answer_to_everything = cppread::read<int>("integer: ").value();
+    auto answer_to_everything = linr::read<int>("integer: ").value();
     fmt::println("the answer to everything is: {}", answer_to_everything);
 }

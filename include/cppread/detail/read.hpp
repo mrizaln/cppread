@@ -1,11 +1,11 @@
-#ifndef CPPREAD_DETAIL_READ_HPP
-#define CPPREAD_DETAIL_READ_HPP
+#ifndef LINR_DETAIL_READ_HPP
+#define LINR_DETAIL_READ_HPP
 
-#include "cppread/common.hpp"
-#include "cppread/parser.hpp"
-#include "cppread/detail/line_reader.hpp"
+#include "linr/common.hpp"
+#include "linr/parser.hpp"
+#include "linr/detail/line_reader.hpp"
 
-namespace cppread::detail
+namespace linr::detail
 {
     template <Parseable... Ts, LineReader R>
         requires(sizeof...(Ts) >= 1)
@@ -25,7 +25,7 @@ namespace cppread::detail
             return Error::EndOfFile;
         }
 
-        auto parts = ::cppread::util::split<sizeof...(Ts)>(line->view(), delim);
+        auto parts = ::linr::util::split<sizeof...(Ts)>(line->view(), delim);
         if (parts) {
             return parseIntoTuple<Ts...>(*parts);
         }
@@ -33,4 +33,4 @@ namespace cppread::detail
     }
 }
 
-#endif /* end of include guard: CPPREAD_DETAIL_READ_HPP */
+#endif /* end of include guard: LINR_DETAIL_READ_HPP */

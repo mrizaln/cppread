@@ -1,4 +1,4 @@
-# cppread
+# linr
 
 Simple console input library written in C++20.
 
@@ -47,14 +47,14 @@ int main() {
 This library is intended to be used in my personal projects if I ever have the need to get inputs from `stdin`, but if you feel this library fits your need, feel free to use it. These are the features this library offer:
 
 - Simple function-based input instead of stream-based input of `std::cin`.
-- Line based input: each read consume an entire line of the `stdin` (using `getline` on linux (glibc) else `fgets`; define/undef `CPPREAD_ENABLE_GETLINE` to override).
-- Improved error handling: using custom type that wraps a variant: `cppread::Result<T>`.
-- Exception-free: no exception thrown from `cppread::read` functions.
+- Line based input: each read consume an entire line of the `stdin` (using `getline` on linux (glibc) else `fgets`; define/undef `LINR_ENABLE_GETLINE` to override).
+- Improved error handling: using custom type that wraps a variant: `linr::Result<T>`.
+- Exception-free: no exception thrown from `linr::read` functions.
 - Buffered or non-buffered read, it's your choice.
-- `const` compatible: you can assign the result of `cppread::read` to a `const` variable easily.
-- Built-in parser for fundamental types (using `std::from_chars`; `bool` has separate implementation) (see the implementation [here](./include/cppread/detail/default_parser.hpp)).
-- Allow overriding default parser via `cppread::CustomParser` specialization.
-- Allow extension for custom type via specialization of `cppread::CustomParser`.
+- `const` compatible: you can assign the result of `linr::read` to a `const` variable easily.
+- Built-in parser for fundamental types (using `std::from_chars`; `bool` has separate implementation) (see the implementation [here](./include/linr/detail/default_parser.hpp)).
+- Allow overriding default parser via `linr::CustomParser` specialization.
+- Allow extension for custom type via specialization of `linr::CustomParser`.
 
 ## Example
 
@@ -65,7 +65,7 @@ This library is intended to be used in my personal projects if I ever have the n
 > Error handling are ignored in order to be succinct, see the next section to have a feel on how to handle errors.
 
 ```cpp
-#include <cppread/read.hpp>
+#include <linr/read.hpp>
 
 #include <iostream>
 #include <format>
@@ -73,7 +73,7 @@ This library is intended to be used in my personal projects if I ever have the n
 // please excuse my use of macro :)
 #define println(...) std::cout << std::format(__VA_ARGS__) << '\n'
 
-using cppread::read;
+using linr::read;
 
 int main()
 try {
@@ -83,7 +83,7 @@ try {
     if (result) {
         println("value: {}", result.value());                       // retrieve contained value
     } else {
-        println("cppread::Error: '{}'", toString(result.error()));  // get human readable error description (ADL in effect here)
+        println("linr::Error: '{}'", toString(result.error()));  // get human readable error description (ADL in effect here)
     }
 
     // multiple values read
@@ -121,10 +121,10 @@ try {
 For example, if you want to get an `int` with value greater than `42`, you might do something like this:
 
 ```cpp
-#include <cppread/read.hpp>
+#include <linr/read.hpp>
 #include <iostream>
 
-using cppread::read, cppread::Error;
+using linr::read, linr::Error;
 
 // wrap the read into a function/lambda so that the returned value can be const
 auto readRepeat() {
@@ -161,11 +161,11 @@ int main() {
 
 ### Custom type parser
 
-You can parse your own type by specializing `cppread::CustomParser` struct. The shape of the struct must conform to `cppread::CustomParseable` concept.
+You can parse your own type by specializing `linr::CustomParser` struct. The shape of the struct must conform to `linr::CustomParseable` concept.
 
 ```cpp
-#include <cppread/read.hpp>
-#include <cppread/parser.hpp>    // cppread::CustomParser, cppread::CustomParseable, cppread::Parseable
+#include <linr/read.hpp>
+#include <linr/parser.hpp>    // linr::CustomParser, linr::CustomParseable, linr::Parseable
 
 struct Color
 {
@@ -175,15 +175,15 @@ struct Color
 };
 
 template <>
-struct cppread::CustomParser<Color>
+struct linr::CustomParser<Color>
 {
     Result<Color> parse(Str str) const noexcept
     {
         // parse string with the shape: `Color { <r> <g> <b> }`
         //                               0     1 2   3   4   5
 
-        // use cppread's split (repeated delimiter counted as one)
-        auto parts = cppread::util::split<6>(str, ' ');
+        // use linr's split (repeated delimiter counted as one)
+        auto parts = linr::util::split<6>(str, ' ');
         if (not parts) {
             return Error::InvalidInput;
         }
@@ -193,9 +193,9 @@ struct cppread::CustomParser<Color>
         }
 
         // parse the underlying type using default parser
-        auto r = cppread::parse<float>(parts->at(2));
-        auto g = cppread::parse<float>(parts->at(3));
-        auto b = cppread::parse<float>(parts->at(4));
+        auto r = linr::parse<float>(parts->at(2));
+        auto g = linr::parse<float>(parts->at(3));
+        auto b = linr::parse<float>(parts->at(4));
 
         if (not r || not g || not b) {
             return Error::InvalidInput;
@@ -205,13 +205,13 @@ struct cppread::CustomParser<Color>
     }
 };
 
-static_assert(cppread::CustomParseable<Color>);
-static_assert(cppread::Parseable<Color>);
+static_assert(linr::CustomParseable<Color>);
+static_assert(linr::Parseable<Color>);
 
 int main() {
     // the delimiter set to '\n' since the Color parser reads a substring that contains space,
     // effectively read the entire line
-    auto result = cppread::read<Color>("input color: ", '\n');
+    auto result = linr::read<Color>("input color: ", '\n');
 
     // use the result ...
 }
@@ -235,10 +235,10 @@ This library is a simple library (about 500 LOC, measured using `cloc`), so a de
 |                                      | `615217 4-floats`     | `625000 4-ints`     |
 | ------------------------------------ | --------------------- | ------------------- |
 | `std::cin` (unsynced)                | `1.155  s ± 0.003  s` | `298.6 ms ± 2.8 ms` |
-| `cppread::read` (getline)            | `261.3 ms ± 1.8   ms` | `163.7 ms ± 1.7 ms` |
-| `cppread::read` (fgets)              | `287.0 ms ± 1.5   ms` | `183.9 ms ± 1.3 ms` |
-| `cppread::BufReader::read` (getline) | `253.4 ms ± 1.8   ms` | `145.7 ms ± 1.1 ms` |
-| `cppread::BufReader::read` (fgets)   | `270.8 ms ± 2.2   ms` | `160.7 ms ± 1.1 ms` |
+| `linr::read` (getline)            | `261.3 ms ± 1.8   ms` | `163.7 ms ± 1.7 ms` |
+| `linr::read` (fgets)              | `287.0 ms ± 1.5   ms` | `183.9 ms ± 1.3 ms` |
+| `linr::BufReader::read` (getline) | `253.4 ms ± 1.8   ms` | `145.7 ms ± 1.1 ms` |
+| `linr::BufReader::read` (fgets)   | `270.8 ms ± 2.2   ms` | `160.7 ms ± 1.1 ms` |
 
 As you can see, this library is generally faster than `std::cin` (unsynced) and can gain up to 4.4x speedup.
 
@@ -250,9 +250,9 @@ As you can see, this library is generally faster than `std::cin` (unsynced) and 
 |                                      | calls to malloc/new |
 | ------------------------------------ | ------------------: |
 | `std::cin` (unsynced)                |           `2460901` |
-| `cppread::read` (getline)            |            `615219` |
-| `cppread::read` (fgets)              |            `615219` |
-| `cppread::BufReader::read` (getline) |                 `7` |
-| `cppread::BufReader::read` (fgets)   |                 `7` |
+| `linr::read` (getline)            |            `615219` |
+| `linr::read` (fgets)              |            `615219` |
+| `linr::BufReader::read` (getline) |                 `7` |
+| `linr::BufReader::read` (fgets)   |                 `7` |
 
-Since `cppread::BufReader` retains its buffer for its lifetime (and it grows as needed), allocation only happen few times at the start. This can help reduce memory fragmentation.
+Since `linr::BufReader` retains its buffer for its lifetime (and it grows as needed), allocation only happen few times at the start. This can help reduce memory fragmentation.

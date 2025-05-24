@@ -1,13 +1,13 @@
-#ifndef CPPREAD_BUF_READER_HPP
-#define CPPREAD_BUF_READER_HPP
+#ifndef LINR_BUF_READER_HPP
+#define LINR_BUF_READER_HPP
 
-#include "cppread/common.hpp"
-#include "cppread/parser.hpp"
-#include "cppread/detail/read.hpp"
+#include "linr/common.hpp"
+#include "linr/parser.hpp"
+#include "linr/detail/read.hpp"
 
 #include <algorithm>
 
-namespace cppread
+namespace linr
 {
     class BufReader
     {
@@ -71,4 +71,4 @@ namespace cppread
     };
 }
 
-#endif /* end of include guard: CPPREAD_BUF_READER_HPP */
+#endif /* end of include guard: LINR_BUF_READER_HPP */

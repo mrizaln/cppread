@@ -1,5 +1,5 @@
-#include <cppread/read.hpp>
-#include <cppread/buf_read.hpp>
+#include <linr/read.hpp>
+#include <linr/buf_read.hpp>
 
 #include <iostream>
 #include <format>
@@ -8,18 +8,18 @@
 
 #define println(...) std::cout << std::format(__VA_ARGS__) << '\n'
 
-using cppread::read;
+using linr::read;
 
 int main()
 try {
     // single value read
     {
-        // read is exception-free, but it returns a cppread::Result<T> instead
+        // read is exception-free, but it returns a linr::Result<T> instead
         auto result = read<int>("Please enter an integer: ");
 
         // can be tested for error using bool conversion
         if (not result) {
-            using E = cppread::Error;
+            using E = linr::Error;
 
             switch (result.error()) {
                 // parse error
@@ -70,8 +70,8 @@ try {
                     return value.value();
                 } else {
                     switch (value.error()) {
-                    case cppread::Error::EndOfFile: [[fallthrough]];
-                    case cppread::Error::Unknown: return 100;
+                    case linr::Error::EndOfFile: [[fallthrough]];
+                    case linr::Error::Unknown: return 100;
                     default: continue;
                     }
                 }
@@ -82,7 +82,7 @@ try {
         println("value: {}", value);
     }
 
-    // read repeatedly until condition met (using cppread::Visit)
+    // read repeatedly until condition met (using linr::Visit)
     {
         const auto readRepeat = [] {
             while (true) {
@@ -94,8 +94,8 @@ try {
                     }
                 } else {
                     switch (result.error()) {
-                    case cppread::Error::EndOfFile: [[fallthrough]];
-                    case cppread::Error::Unknown: return std::tuple{ 100, 100 };
+                    case linr::Error::EndOfFile: [[fallthrough]];
+                    case linr::Error::Unknown: return std::tuple{ 100, 100 };
                     default: continue;
                     }
                 }
@@ -112,8 +112,8 @@ try {
             auto result = read<int>("enter an integer greater than 10: ");
             if (not result) {
                 switch (result.error()) {
-                case cppread::Error::EndOfFile: [[fallthrough]];
-                case cppread::Error::Unknown: value = 100;
+                case linr::Error::EndOfFile: [[fallthrough]];
+                case linr::Error::Unknown: value = 100;
                 default: /* do nothing */;
                 }
             } else {
@@ -122,7 +122,7 @@ try {
         }
     }
 
-} catch (cppread::Error error) {
+} catch (linr::Error error) {
 
-    println("cppread::Error: '{}'", cppread::toString(error));
+    println("linr::Error: '{}'", linr::toString(error));
 }
