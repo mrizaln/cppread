@@ -48,9 +48,9 @@ namespace linr
         {
             auto result = detail::read_impl<T>(m_reader, prompt, delim);
             if (result) {
-                return std::get<0>(std::move(result).value());
+                return make_result<T>(std::get<0>(std::move(result).value()));
             }
-            return result.error();
+            return make_error<T>(result.error());
         }
 
         /**
@@ -62,9 +62,9 @@ namespace linr
         {
             auto result = detail::read_impl<std::string>(m_reader, prompt, '\n');
             if (result) {
-                return std::get<0>(std::move(result).value());
+                return make_result<std::string>(std::get<0>(std::move(result).value()));
             }
-            return result.error();
+            return make_error<std::string>(result.error());
         }
 
     private:
