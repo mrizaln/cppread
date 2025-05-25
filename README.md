@@ -132,16 +132,12 @@ auto read_repeat()
 {
     while (true) {
         auto result = read<int>("Please enter an integer greater than 42: ");
-        if (not result and is_stream_error(result.error())) {    // check if stream error (e.g. EOF) (ADL)
-            throw std::runtime_error{ to_string(result.error()) };  // eof is unrecoverable
+        if (result and result.value() > 42) {
+            return result.value();
+        } else if (not result and is_stream_error(result.error())) {    // check if stream error (e.g. EOF)
+            throw std::runtime_error{ to_string(result.error()) };      // eof is unrecoverable
         }
-
-        if (result.value() <= 42) {
-            std::cout << "Inputted value is less than or equal to 42, please try again";
-            continue;
-        }
-
-        return result.value();
+        std::cout << "Inputted value is less than or equal to 42, please try again";
     }
 }
 
