@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.16)
-project(linr-test VERSION 0.0.0)
+project(linr-test VERSION 0.1.0)
 
 include(cmake/prelude.cmake)
 

@@ -1,6 +1,6 @@
 # linr
 
-Simple line-based console input/read with automatic parsing written in C++20.
+Simple line-based console input/read library with automatic parsing written in C++20.
 
 ## Motivation
 
