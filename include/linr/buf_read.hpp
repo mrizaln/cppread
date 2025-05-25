@@ -2,8 +2,8 @@
 #define LINR_BUF_READER_HPP
 
 #include "linr/common.hpp"
-#include "linr/parser.hpp"
 #include "linr/detail/read.hpp"
+#include "linr/parser.hpp"
 
 #include <algorithm>
 
@@ -30,7 +30,7 @@ namespace linr
          * @param delim Delimiter, only `char` so you can't use unicode.
          */
         template <Parseable... Ts>
-            requires(sizeof...(Ts) > 1)
+            requires (sizeof...(Ts) > 1) and (std::movable<Ts> and ...)
         Results<Ts...> read(Opt<Str> prompt = std::nullopt, char delim = ' ') noexcept
         {
             return detail::read_impl<Ts...>(m_reader, prompt, delim);
@@ -43,6 +43,7 @@ namespace linr
          * @param delim Delimiter, only `char` so you can't use unicode.
          */
         template <Parseable T>
+            requires std::movable<T>
         Result<T> read(Opt<Str> prompt = std::nullopt, char delim = ' ') noexcept
         {
             auto result = detail::read_impl<T>(m_reader, prompt, delim);

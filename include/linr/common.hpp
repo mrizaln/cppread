@@ -7,6 +7,10 @@
 #include <utility>
 #include <variant>
 
+#if defined(__cpp_lib_expected)
+#    include <expected>
+#endif
+
 namespace linr
 {
     template <typename T>
@@ -47,6 +51,10 @@ namespace linr
         }
     }
 
+#if defined(__cpp_lib_expected)
+    template <typename T>
+    using Result = std::expected<T, Error>;
+#else
     /**
      * @brief Result class that store parsed value or an error
      */
@@ -54,33 +62,41 @@ namespace linr
     class [[nodiscard]] Result
     {
     public:
-        template <typename TT>
-        Result(TT&& value) noexcept
-            : m_value(std::forward<TT>(value))
+        Result() = default;
+
+        template <typename... Args>
+            requires std::constructible_from<T, Args...>
+        Result(Args&&... args) noexcept
+            : m_value{ std::in_place_type<T>, std::forward<Args>(args)... }
         {
         }
 
         Result(Error error) noexcept
-            : m_value(error)
+            : m_value{ error }
         {
         }
 
-        explicit operator bool() const noexcept { return std::holds_alternative<T>(m_value); }
-
-        bool is_value() const noexcept { return static_cast<bool>(*this); }
-        bool is_error() const noexcept { return not is_value(); }
-
-        T&&      value() && noexcept(false) { return std::move(std::get<T>(m_value)); }
-        T&       value() & noexcept(false) { return std::get<T>(m_value); }
-        const T& value() const& noexcept(false) { return std::get<T>(m_value); }
+        T&&      value() && { return std::get<T>(std::move(m_value)); }
+        T&       value() & { return std::get<T>(m_value); }
+        const T& value() const& { return std::get<T>(m_value); }
 
         T value_or(T&& defaultt) && noexcept { return *this ? std::move(std::get<T>(m_value)) : defaultt; }
         const T& value_or(T&& defaultt) const& noexcept { return *this ? std::get<T>(m_value) : defaultt; }
 
-        Error&       error() noexcept(false) { return std::get<Error>(m_value); }
-        const Error& error() const noexcept(false) { return std::get<Error>(m_value); }
+        Error&&      error() && { return std::get<Error>(std::move(m_value)); }
+        Error&       error() & { return std::get<Error>(m_value); }
+        const Error& error() const& { return std::get<Error>(m_value); }
 
-        std::variant<T, Error>& variant() noexcept { return m_value; }
+        bool has_value() const noexcept { return std::holds_alternative<T>(m_value); }
+
+        explicit operator bool() const noexcept { return has_value(); }
+
+        T&&      operator*() && noexcept { return std::move(value()); }
+        T&       operator*() & noexcept { return value(); }
+        const T& operator*() const& noexcept { return value(); }
+
+        T*       operator->() noexcept { return &value(); }
+        const T* operator->() const noexcept { return &value(); }
 
     private:
         std::variant<T, Error> m_value;
@@ -96,10 +112,31 @@ namespace linr
      * @tparam T The parsed object if it's successful
      */
     template <typename Fn, typename T>
-    concept RepeatFn = requires(const Fn fn, T t, Error error) {
+    concept RepeatFn = requires (const Fn fn, T t, Error error) {
         { fn(t) } -> std::same_as<bool>;
         { fn(error) } -> std::same_as<Opt<T>>;
     };
+#endif
+
+    template <typename T, typename... Args>
+    Result<T> make_result(Args&&... args)
+    {
+#if defined(__cpp_lib_expected)
+        return Result<T>{ std::in_place, std::forward<Args>(args)... };
+#else
+        return Result<T>{ std::forward<Args>(args)... };
+#endif
+    }
+
+    template <typename T>
+    Result<T> make_error(Error error)
+    {
+#if defined(__cpp_lib_expected)
+        return Result<T>{ std::unexpect, error };
+#else
+        return Result<T>{ error };
+#endif
+    }
 }
 
 #endif /* end of include guard: LINR_COMMON_HPP */

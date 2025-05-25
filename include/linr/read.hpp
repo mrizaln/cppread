@@ -12,7 +12,7 @@ namespace linr
      * @param delim Delimiter, only `char` so you can't use unicode.
      */
     template <Parseable... Ts>
-        requires(sizeof...(Ts) > 1)
+        requires (sizeof...(Ts) > 1) and (std::movable<Ts> and ...)
     Results<Ts...> read(Opt<Str> prompt = std::nullopt, char delim = ' ') noexcept
     {
         auto reader = detail::Reader{};
@@ -26,14 +26,15 @@ namespace linr
      * @param delim Delimiter, only `char` so you can't use unicode.
      */
     template <Parseable T>
+        requires std::movable<T>
     Result<T> read(Opt<Str> prompt = std::nullopt, char delim = ' ') noexcept
     {
         auto reader = detail::Reader{};
         auto result = detail::read_impl<T>(reader, prompt, delim);
         if (result) {
-            return std::get<0>(std::move(result).value());
+            return make_result<T>(std::get<0>(std::move(result).value()));
         }
-        return result.error();
+        return make_error<T>(result.error());
     }
 
     /**
@@ -46,9 +47,9 @@ namespace linr
         auto reader = detail::Reader{};
         auto result = detail::read_impl<std::string>(reader, prompt, '\n');
         if (result) {
-            return std::get<0>(std::move(result).value());
+            return make_result<std::string>(std::get<0>(std::move(result).value()));
         }
-        return result.error();
+        return make_error<std::string>(result.error());
     }
 }
 

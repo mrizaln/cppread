@@ -39,18 +39,18 @@ namespace linr::detail
             }
 
             if (buf[0] == '0') {
-                return false;
+                return make_result<bool>(false);
             } else if (buf[0] == '1') {
-                return true;
+                return make_result<bool>(true);
             }
 
             if (buf == litFalse) {
-                return false;
+                return make_result<bool>(false);
             } else if (buf == litTrue) {
-                return true;
+                return make_result<bool>(true);
             }
 
-            return Error::InvalidInput;
+            return make_error<bool>(Error::InvalidInput);
         }
     };
 
@@ -64,9 +64,9 @@ namespace linr::detail
             auto [ptr, ec] = std::from_chars(str.begin(), str.end(), value);
 
             if (ec == std::errc::invalid_argument) {
-                return Error::InvalidInput;
+                return make_error<T>(Error::InvalidInput);
             } else if (ec == std::errc::result_out_of_range) {
-                return Error::OutOfRange;
+                return make_error<T>(Error::OutOfRange);
             }
 
             return value;
@@ -77,7 +77,10 @@ namespace linr::detail
     template <>
     struct DefaultParser<std::string>
     {
-        Result<std::string> parse(Str str) const noexcept { return std::string{ str.begin(), str.size() }; }
+        Result<std::string> parse(Str str) const noexcept
+        {
+            return make_result<std::string>(str.begin(), str.size());
+        }
     };
 }
 

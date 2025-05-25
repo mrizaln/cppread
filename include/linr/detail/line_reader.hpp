@@ -4,20 +4,20 @@
 #include "linr/common.hpp"
 
 #include <concepts>
+#include <cstdio>
 #include <memory>
 #include <utility>
 #include <vector>
-#include <cstdio>
 
 namespace linr::detail
 {
     template <typename L>
-    concept Line = requires(const L l) {
+    concept Line = requires (const L l) {
         { l.view() } noexcept -> std::same_as<Str>;
     };
 
     template <typename R>
-    concept LineReader = requires(R r) {
+    concept LineReader = requires (R r) {
         typename R::Line;
         requires Line<typename R::Line>;
 

@@ -2,18 +2,18 @@
 #define LINR_DETAIL_READ_HPP
 
 #include "linr/common.hpp"
-#include "linr/parser.hpp"
 #include "linr/detail/line_reader.hpp"
+#include "linr/parser.hpp"
 
 namespace linr::detail
 {
     template <Parseable... Ts, LineReader R>
-        requires(sizeof...(Ts) >= 1)
+        requires (sizeof...(Ts) >= 1) and (std::movable<Ts> and ...)
     Results<Ts...> read_impl(R& reader, Opt<Str> prompt, char delim) noexcept
     {
         // first and foremost, check whether stdin available at all
         if (std::ferror(stdin)) {
-            return Error::Unknown;
+            return make_error<Tup<Ts...>>(Error::Unknown);
         }
 
         if (prompt) {
@@ -22,14 +22,14 @@ namespace linr::detail
 
         auto line = reader.readline();
         if (not line) {
-            return Error::EndOfFile;
+            return make_error<Tup<Ts...>>(Error::EndOfFile);
         }
 
-        auto parts = ::linr::util::split<sizeof...(Ts)>(line->view(), delim);
+        auto parts = util::split<sizeof...(Ts)>(line->view(), delim);
         if (parts) {
             return parseIntoTuple<Ts...>(*parts);
         }
-        return Error::InvalidInput;
+        return make_error<Tup<Ts...>>(Error::InvalidInput);
     }
 }
 

@@ -2,8 +2,8 @@
 #define LINR_PARSER_HPP
 
 #include "linr/common.hpp"
-#include "linr/util.hpp"
 #include "linr/detail/default_parser.hpp"
+#include "linr/util.hpp"
 
 #include <span>
 
@@ -21,12 +21,12 @@ namespace linr
     struct CustomParser;
 
     template <typename T>
-    concept CustomParseable = requires(const CustomParser<T> p, Str str) {
+    concept CustomParseable = requires (const CustomParser<T> p, Str str) {
         { p.parse(str) } noexcept -> std::same_as<Result<T>>;
     };
 
     template <typename T>
-    concept DefaultParseable = requires(const detail::DefaultParser<T> p, Str str) {
+    concept DefaultParseable = requires (const detail::DefaultParser<T> p, Str str) {
         { p.parse(str) } noexcept -> std::same_as<Result<T>>;
     };
 
@@ -67,19 +67,19 @@ namespace linr
         // check whether any of the values is an error
         auto error = Opt<Error>{};
         util::forEachTuple(maybeResult, [&]<std::size_t I, typename T>(T& value) {
-            if (not error.has_value() and value.is_error()) {
+            if (not error.has_value() and not value) {
                 error = value.error();
             }
         });
         if (error.has_value()) {
-            return error.value();
+            return make_error<Tup<Ts...>>(error.value());
         }
 
         // if no error, flatten the tuple and return
         const auto flatten = [&]<std::size_t... Is>(std::index_sequence<Is...>) -> Tup<Ts...> {
             return { std::move(std::get<Is>(maybeResult)).value()... };
         };
-        return flatten(Seq{});
+        return make_result<Tup<Ts...>>(flatten(Seq{}));
     }
 }
 
