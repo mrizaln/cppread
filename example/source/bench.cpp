@@ -1,5 +1,5 @@
-#include <linr/read.hpp>
 #include <linr/buf_read.hpp>
+#include <linr/read.hpp>
 
 #include <CLI/CLI.hpp>
 #include <fmt/core.h>
@@ -107,16 +107,16 @@ int main(int argc, char** argv)
 {
     auto app = CLI::App{ "linr bench" };
 
-    auto type    = Bench::Float;
-    auto useCin  = false;
-    auto bufRead = false;
-    auto verbose = false;
+    auto type     = Bench::Float;
+    auto use_cin  = false;
+    auto buf_read = false;
+    auto verbose  = false;
 
     app.add_option("type", type, "The type to bench")
         ->required()
         ->transform(CLI::CheckedTransformer(TYPE_STR, CLI::ignore_case));
-    app.add_flag("--cin", useCin, "Use cin instead");
-    app.add_flag("--buf", bufRead, "Use buffered read");
+    app.add_flag("--cin", use_cin, "Use cin instead");
+    app.add_flag("--buf", buf_read, "Use buffered read");
     app.add_flag("--verbose", verbose, "Print output");
 
     if (argc <= 1) {
@@ -128,10 +128,10 @@ int main(int argc, char** argv)
 
     switch (type) {
     case Bench::Int:
-        if (useCin) {
+        if (use_cin) {
             auto reader = CinReader{};
             bench<int>(reader, verbose);
-        } else if (bufRead) {
+        } else if (buf_read) {
             auto reader = linr::BufReader{ 1024 };
             bench<int>(reader, verbose);
         } else {
@@ -140,10 +140,10 @@ int main(int argc, char** argv)
         }
         break;
     case Bench::Float:
-        if (useCin) {
+        if (use_cin) {
             auto reader = CinReader{};
             bench<float>(reader, verbose);
-        } else if (bufRead) {
+        } else if (buf_read) {
             auto reader = linr::BufReader{ 1024 };
             bench<float>(reader, verbose);
         } else {

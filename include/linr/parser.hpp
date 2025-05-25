@@ -54,7 +54,7 @@ namespace linr
      * @return The resulting parsed values as tuple or an error.
      */
     template <typename... Ts>
-    constexpr Results<Ts...> parseIntoTuple(std::span<Str, sizeof...(Ts)> values) noexcept
+    constexpr Results<Ts...> parse_into_tuple(std::span<Str, sizeof...(Ts)> values) noexcept
     {
         using Seq = std::index_sequence_for<Ts...>;
 
@@ -62,11 +62,11 @@ namespace linr
         const auto multiparse = [&]<std::size_t... Is>(std::index_sequence<Is...>) -> Tup<Result<Ts>...> {
             return { parse<Ts>(values[Is])... };
         };
-        auto maybeResult = multiparse(Seq{});
+        auto maybe_result = multiparse(Seq{});
 
         // check whether any of the values is an error
         auto error = Opt<Error>{};
-        util::forEachTuple(maybeResult, [&]<std::size_t I, typename T>(T& value) {
+        util::for_each_tuple(maybe_result, [&]<std::size_t I, typename T>(T& value) {
             if (not error.has_value() and not value) {
                 error = value.error();
             }
@@ -77,7 +77,7 @@ namespace linr
 
         // if no error, flatten the tuple and return
         const auto flatten = [&]<std::size_t... Is>(std::index_sequence<Is...>) -> Tup<Ts...> {
-            return { std::move(std::get<Is>(maybeResult)).value()... };
+            return { std::move(std::get<Is>(maybe_result)).value()... };
         };
         return make_result<Tup<Ts...>>(flatten(Seq{}));
     }

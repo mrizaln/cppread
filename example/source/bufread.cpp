@@ -4,7 +4,7 @@
 #include <fmt/ranges.h>
 
 template <typename... Ts>
-auto readRepeat(linr::BufReader& reader, std::string_view prompt, std::string_view fail)
+auto read_repeat(linr::BufReader& reader, std::string_view prompt, std::string_view fail)
 {
     while (true) {
         auto result = reader.read<Ts...>(prompt);
@@ -17,15 +17,15 @@ auto readRepeat(linr::BufReader& reader, std::string_view prompt, std::string_vi
             fmt::println("stdin EOF reached!");
             return;
         }
-        fmt::println("{} [{}]", fail, toString(result.error()));
+        fmt::println("{} [{}]", fail, to_string(result.error()));
     }
 }
 
 int main()
 {
     auto reader = linr::BufReader(10);
-    readRepeat<int>(reader, "input 1 int: ", "Please input an integer");
-    readRepeat<int, int>(reader, "input 2 int: ", "Please input an integer");
-    readRepeat<int, int, int>(reader, "input 3 int: ", "Please input an integer");
-    readRepeat<int, int, int, int>(reader, "input 4 int: ", "Please input an integer");
+    read_repeat<int>(reader, "input 1 int: ", "Please input an integer");
+    read_repeat<int, int>(reader, "input 2 int: ", "Please input an integer");
+    read_repeat<int, int, int>(reader, "input 3 int: ", "Please input an integer");
+    read_repeat<int, int, int, int>(reader, "input 4 int: ", "Please input an integer");
 }

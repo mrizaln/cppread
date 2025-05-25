@@ -28,8 +28,8 @@ namespace linr::detail
         {
             using Buf = std::array<char, 6>;
 
-            constexpr auto litFalse = Buf{ "false" };
-            constexpr auto litTrue  = Buf{ "true" };
+            constexpr auto lit_false = Buf{ "false" };
+            constexpr auto lit_true  = Buf{ "true" };
 
             auto buf = Buf{};
 
@@ -44,9 +44,9 @@ namespace linr::detail
                 return make_result<bool>(true);
             }
 
-            if (buf == litFalse) {
+            if (buf == lit_false) {
                 return make_result<bool>(false);
-            } else if (buf == litTrue) {
+            } else if (buf == lit_true) {
                 return make_result<bool>(true);
             }
 
@@ -55,7 +55,8 @@ namespace linr::detail
     };
 
     // specialization for fundamental types
-    template <Fundamental T>
+    template <typename T>
+        requires std::is_fundamental_v<T>
     struct DefaultParser<T>
     {
         Result<T> parse(Str str) const noexcept

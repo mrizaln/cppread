@@ -27,7 +27,7 @@ namespace linr::detail
 
         auto parts = util::split<sizeof...(Ts)>(line->view(), delim);
         if (parts) {
-            return parseIntoTuple<Ts...>(*parts);
+            return parse_into_tuple<Ts...>(*parts);
         }
         return make_error<Tup<Ts...>>(Error::InvalidInput);
     }

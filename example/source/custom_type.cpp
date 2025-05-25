@@ -1,5 +1,5 @@
-#include <linr/read.hpp>
 #include <linr/parser.hpp>    // linr::CustomParser and linr::CustomParseable
+#include <linr/read.hpp>
 
 #include <fmt/core.h>
 
@@ -20,11 +20,11 @@ struct linr::CustomParser<Color>
         //                               0     1 2   3   4   5
         auto parts = linr::util::split<6>(str, ' ');
         if (not parts) {
-            return Error::InvalidInput;
+            return make_error<Color>(Error::InvalidInput);
         }
 
         if (parts->at(0) != "Color" || parts->at(1) != "{" || parts->at(5) != "}") {
-            return Error::InvalidInput;
+            return make_error<Color>(Error::InvalidInput);
         }
 
         auto r = linr::parse<float>(parts->at(2));
@@ -32,10 +32,10 @@ struct linr::CustomParser<Color>
         auto b = linr::parse<float>(parts->at(4));
 
         if (not r || not g || not b) {
-            return Error::InvalidInput;
+            return make_error<Color>(Error::InvalidInput);
         }
 
-        return Color{ r.value(), g.value(), b.value() };
+        return make_result<Color>(r.value(), g.value(), b.value());
     }
 };
 

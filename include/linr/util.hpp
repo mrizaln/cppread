@@ -66,7 +66,7 @@ namespace linr::util
      * @param fn The function to apply to each element.
      */
     template <typename T, typename Fn>
-    constexpr void forEachTuple(T&& tuple, Fn&& fn)
+    constexpr void for_each_tuple(T&& tuple, Fn&& fn)
     {
         using Tup               = std::decay_t<T>;
         constexpr std::size_t N = std::tuple_size_v<std::decay_t<Tup>>;

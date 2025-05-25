@@ -1,8 +1,8 @@
-#include <linr/read.hpp>
 #include <linr/buf_read.hpp>
+#include <linr/read.hpp>
 
-#include <iostream>
 #include <format>
+#include <iostream>
 
 // please excuse my use of macro :)
 
@@ -50,9 +50,9 @@ try {
         }
 
         // returned value is tuple, you can use structured binding
-        auto [vInt, vChar, vString] = std::move(result).value();
+        auto [v_int, v_char, v_string] = std::move(result).value();
 
-        println("int: {} | char: {} | string: {}", vInt, vChar, vString);
+        println("int: {} | char: {} | string: {}", v_int, v_char, v_string);
     }
 
     // read a whole line of string
@@ -63,7 +63,7 @@ try {
 
     // read repeatedly until condition met (using if constexpr lambda)
     {
-        const auto readRepeat = [] {
+        const auto read_repeat = [] {
             while (true) {
                 auto value = read<int>("integer greater than 10: ");
                 if (value and value.value() > 10) {
@@ -77,14 +77,14 @@ try {
                 }
             }
         };
-        const auto value = readRepeat();
+        const auto value = read_repeat();
 
         println("value: {}", value);
     }
 
     // read repeatedly until condition met (using linr::Visit)
     {
-        const auto readRepeat = [] {
+        const auto read_repeat = [] {
             while (true) {
                 auto result = read<int, int>("two integer (first one must be greater than 10): ");
                 if (result) {
@@ -101,7 +101,7 @@ try {
                 }
             }
         };
-        const auto [value1, value2] = readRepeat();
+        const auto [value1, value2] = read_repeat();
 
         println("value1: {} | value2: {}", value1, value2);
     }
@@ -124,5 +124,5 @@ try {
 
 } catch (linr::Error error) {
 
-    println("linr::Error: '{}'", linr::toString(error));
+    println("linr::Error: '{}'", linr::to_string(error));
 }
