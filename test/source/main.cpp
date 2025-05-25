@@ -2,14 +2,26 @@
 
 #include <linr/read.hpp>
 
+#include <boost/ut.hpp>
 #include <fmt/core.h>
 #include <fmt/ranges.h>
-#include <boost/ut.hpp>
 
 namespace ut = boost::ut;
 
 struct Idk
 {
+    Idk(const Idk&)            = delete;
+    Idk& operator=(const Idk&) = delete;
+
+    Idk(Idk&&)            = default;
+    Idk& operator=(Idk&&) = default;
+
+    Idk(int i, float f)
+        : m_int{ i }
+        , m_float{ f }
+    {
+    }
+
     int   m_int;
     float m_float;
 };
@@ -24,10 +36,10 @@ struct linr::CustomParser<Idk>
             return Error::InvalidInput;
         }
 
-        return Idk{
-            .m_int   = linr::parse<int>(split->at(0)).value_or(0),
-            .m_float = linr::parse<float>(split->at(1)).value_or(0.0),
-        };
+        auto i = linr::parse<int>(split->at(0)).value_or(0);
+        auto f = linr::parse<float>(split->at(1)).value_or(0.0);
+
+        return make_result<Idk>(i, f);
     }
 };
 
