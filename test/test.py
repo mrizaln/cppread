@@ -44,7 +44,9 @@ def main() -> int:
     binary_path = Path("build") / build_type.capitalize() / "main"
 
     with open(TEST_FILE) as f:
-        run([str(binary_path)], input=f.read(), text=True).check_returncode()
+        input = f.read()
+        input += input
+        run([str(binary_path)], input=input, text=True).check_returncode()
 
     return 0
 
